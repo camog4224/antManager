@@ -16,13 +16,13 @@ public class AntColony extends PApplet {
 
 /*
    use A* algorithm to pathfind ants from tile A to tile B, then use centers of trianlges as targets, use tower defense target
-   seeking to move ant from A to B
-
-   use either bezierVertex() or bezierPoint() to proceduraly make the textures for the game
-
-
-   check if process is stupid in image compression, like if resizing a 900x900 to a
-   100x100 makes it look horrible like doing the inverse would do(prob try in dif program)
+ seeking to move ant from A to B
+ 
+ use either bezierVertex() or bezierPoint() to proceduraly make the textures for the game
+ 
+ 
+ check if process is stupid in image compression, like if resizing a 900x900 to a
+ 100x100 makes it look horrible like doing the inverse would do(prob try in dif program)
  */
 
 
@@ -51,32 +51,22 @@ PVector[] multipleTargets;
 
 Worker[] ants;
 
-// PVector[][] squareTriangles = {
-//     {new PVector(-1, -1), new PVector(0, -1)},
-//     {new PVector(0, -1), new PVector(1, -1)},
-//     {new PVector(1, -1), new PVector(1, 0)},
-//     {new PVector(1, 0), new PVector(1, 1)},
-//     {new PVector(1, 1), new PVector(0, 1)},
-//     {new PVector(0, 1), new PVector(-1, 1)},
-//     {new PVector(-1, 1), new PVector(-1, 0)},
-//     {new PVector(-1, 0), new PVector(-1, -1)},
-// };
 
 PVector[][] squareTriangles = {
-  {new PVector(0,0),new PVector(1,1), new PVector(0,1), new PVector(0,0),new PVector(1,1), new PVector(1,0)}, //0 //1
-  {new PVector(0,1),new PVector(1,0), new PVector(0,0), new PVector(0,1),new PVector(1,0), new PVector(1,1)}  //1 //3
+  {new PVector(0, 0), new PVector(1, 1), new PVector(0, 1), new PVector(0, 0), new PVector(1, 1), new PVector(1, 0)}, //0 //1
+  {new PVector(0, 1), new PVector(1, 0), new PVector(0, 0), new PVector(0, 1), new PVector(1, 0), new PVector(1, 1)}  //1 //3
 
 };
 // north, east, south, west
 int[] triangleDirections = {
-  0,
-  0,
-  1,
-  1,
-  2,
-  2,
-  3,
-  3,
+  0, 
+  0, 
+  1, 
+  1, 
+  2, 
+  2, 
+  3, 
+  3, 
 };
 
 float[] angles = new float[8];
@@ -84,601 +74,603 @@ float[] angles = new float[8];
 Tree tree;
 
 public void setup() {
-    
-    int numCols = 10;
-    int numRows = 7;
-    float xWidth = width/PApplet.parseFloat(numCols);
-    float yHeight = height/PApplet.parseFloat(numRows);
-    float xTheta = calcXTheta(xWidth, yHeight);
+  
+  int numCols = 10;
+  int numRows = 7;
+  float xWidth = width/PApplet.parseFloat(numCols);
+  float yHeight = height/PApplet.parseFloat(numRows);
+  //float xTheta = calcXTheta(xWidth, yHeight);
 
-    // angles[0] = xTheta/2;
-    // angles[1] = 90;
-    // angles[2] = 180 - xTheta/2;
-    // angles[3] = 180;
-    // angles[4] = 180 + xTheta/2;
-    // angles[5] = 270;
-    // angles[6] = 360-xTheta/2;
-    // angles[7] = 360;
+  colorMode(HSB, 360, 100, 100);
+  initializeArrays();
 
-    colorMode(HSB, 360, 100, 100);
-    initializeArrays();
+  a = new LandPlot(numCols, numRows, xWidth, yHeight);
+  setupAnts();
+  float[] start= {175, 7, PI/8, 1, .6f, 0.1f, 0.5f, 0}; // start values for tree
 
-    a = new LandPlot(numCols, numRows, xWidth, yHeight);
-
-    float[] start= {175, 7, PI/8, 1, .6f, 0.1f, 0.5f, 0};
-
-    tree = new Tree(start);
+  tree = new Tree(start);
 }
 
-public float calcXTheta(float xWidth, float yHeight) {
-    float a = degrees(atan(yHeight/xWidth));
-    float yTheta = 180-2*a;
-    return 180-yTheta;
-}
 
 public void initializeArrays() {
-    imageNameToIndex = new IntDict();
+  imageNameToIndex = new IntDict();
 
-    String[] _imageNames = {"background", "dirt", "stone", "water"};
-    int[] oTemp =              {255, 255, 255, 100};
-    //load all images
-    imageNames = _imageNames;
-    allImages = new PImage[imageNames.length];
-    imageOpacities = oTemp;
-    for (int i = 0; i < imageNames.length; i++) {
-         imageNameToIndex.set(imageNames[i], i);
-         allImages[i] = loadImage(imageNames[i] + "_100.png");
-     }
+  String[] _imageNames = {"background", "dirt", "stone", "water"};
+  int[] oTemp =              {255, 255, 255, 100};
+  //load all images
+  imageNames = _imageNames;
+  allImages = new PImage[imageNames.length];
+  imageOpacities = oTemp;
+  for (int i = 0; i < imageNames.length; i++) {
+    imageNameToIndex.set(imageNames[i], i);
+    allImages[i] = loadImage(imageNames[i] + "_100.png");
+  }
 
-    background = allImages[imageNameToIndex.get("background")].copy();
-    background.resize(width, height);
+  background = allImages[imageNameToIndex.get("background")].copy();
+  background.resize(width, height);
 
-    String[] _antNames = {"worker",             "queen",                 "fighter",     "scouter"};
-    int[] _antColors = {color(110, 99, 70), color(359, 99, 99), color(61, 99, 99), color(178, 99, 99)};
-    antNames = _antNames;
-    antColors = _antColors;
+  String[] _antNames = {"worker", "queen", "fighter", "scouter"};
+  int[] _antColors = {color(110, 99, 70), color(359, 99, 99), color(61, 99, 99), color(178, 99, 99)};
+  antNames = _antNames;
+  antColors = _antColors;
 
-    antNameToIndex = new IntDict();
+  antNameToIndex = new IntDict();
 
-    for(int i = 0; i < antNames.length; i++) {
-         antNameToIndex.set(antNames[i], i);
-     }
+  for (int i = 0; i < antNames.length; i++) {
+    antNameToIndex.set(antNames[i], i);
+  }
+}
 
-
-    multipleTargets = new PVector[10];
-    ants = new Worker[10];
-    for(int i = 0; i < ants.length; i++){
-      PVector[] tempTargets = new PVector[10];
-      for(int j = 0; j < tempTargets.length; j++){
-        tempTargets[j] = new PVector(random(width), random(height));;
-      }
-      ants[i] = new Worker(new PVector(random(width), random(height)));
-      ants[i].beginTracking(tempTargets);
-    }
-    // for(int i = 0; i < multipleTargets.length; i++) {
-    //      multipleTargets[i] = new PVector(random(width), random(height));
-    //      // float widthIncrement = width/float(multipleTargets.length);
-    //      // multipleTargets[i] = new PVector(widthIncrement*i, height/2);
-    //  }
-
-    // ant = new Worker(new PVector(random(width*0.2, width*0.6), random(height*0.2, height*0.6)));
-
+public void setupAnts() {
+  multipleTargets = new PVector[10];
+  ants = new Worker[10];
+  for (int i = 0; i < ants.length; i++) {
+    PVector[] tempTargets = new PVector[10];
+    //for (int j = 0; j < tempTargets.length; j++) {
+    //  tempTargets[j] = new PVector(random(width), random(height));
+    //}
+    ants[i] = new Worker(new PVector(random(width), random(height)));
+    tempTargets = a.randomTriangleCenters(multipleTargets.length);
+    ants[i].beginTracking(tempTargets);
+  }
 }
 
 public void draw() {
 
-//     background(32, 100, 20);
-// for(int i = 0; i < ants.length; i++){
-//   ants[i].update();
-// }
+  //background(32, 100, 20);
 
 
-    noTint();
-    image(background, 0,0);
-    a.display();
-    a.newHighLight(mouseX, mouseY);
-    //tree.display();
+
+  noTint();
+  image(background, 0, 0);
+  a.display();
+  //a.highlightLandTriangleSelected(mouseX, mouseY);
+  a.highLightSurroundingTriangles(mouseX, mouseY);
+  //tree.display();
+
+  for (int i = 0; i < ants.length; i++) {
+    ants[i].update();
+  }
 }
 
 public void mouseDragged() {
-    a.changeTriangle(mouseX, mouseY);
+  a.changeTriangle(mouseX, mouseY);
 }
 
 public void mousePressed() {
-    a.changeTriangle(mouseX, mouseY);
-    // println(a.findTriangleIndex(mouseX, mouseY));
+  a.changeTriangle(mouseX, mouseY);
+  // println(a.findTriangleIndex(mouseX, mouseY));
 }
 
 public void keyPressed() {
-    tree.reCreate();
+  tree.reCreate();
 }
 
 public PVector[] PVectorListToArray(ArrayList<PVector> lis) {
-    PVector[] temp = new PVector[lis.size()];
-    for (int i = 0; i < temp.length; i++) {
-         temp[i] = lis.get(i);
-     }
-    return temp;
+  PVector[] temp = new PVector[lis.size()];
+  for (int i = 0; i < temp.length; i++) {
+    temp[i] = lis.get(i);
+  }
+  return temp;
+}
+
+
+public PVector centerTrianglePoint(PVector[] vertexes){
+  PVector centerPoint;
+  float tempX = 0;
+  float tempY = 0;
+  for(int i = 0; i < 3; i++){
+    tempX += vertexes[i].x;
+    tempY += vertexes[i].y;
+  }
+  centerPoint = new PVector(tempX/3, tempY/3);
+  return centerPoint;
 }
 
 class Entity {
-    boolean dead;
-    float maxHealth;
-    float currentHealth;
-    float damage;
-    Entity() {
-        dead = false;
-        maxHealth = 100;
-        currentHealth = maxHealth;
-        damage = 10;
-    }
+  boolean dead;
+  float maxHealth;
+  float currentHealth;
+  float damage;
+  Entity() {
+    dead = false;
+    maxHealth = 100;
+    currentHealth = maxHealth;
+    damage = 10;
+  }
 
-    //the enemy changing through time
-    public void update() {
-    }
-    //the enemies
-    public void checkCollision() {
-    }
+  //the enemy changing through time
+  public void update() {
+  }
+  //the enemies
+  public void checkCollision() {
+  }
 
-    public boolean checkRectCollision(float x, float y, float w, float h) {
-        return false;
-    }
-    public boolean checkCircCollision(float x, float y, float r) {
-        return false;
-    }
+  public boolean checkRectCollision(float x, float y, float w, float h) {
+    return false;
+  }
+  public boolean checkCircCollision(float x, float y, float r) {
+    return false;
+  }
 
-    public void displayHealth(float x, float y, float Length, float Height) {
-        float healthBarTotalLength = Length;
-        float healthLeft = map(currentHealth, 0, maxHealth, 0, healthBarTotalLength);
-        stroke(0);
-        strokeWeight(1);
-        rectMode(CORNER);
-        //green health
-        fill(122, 60, 95);
-        rect(x, y, healthLeft, Height);
-        //red health
-        fill(359, 99, 99);
-        rect(x+ healthLeft, y, healthBarTotalLength-healthLeft, Height);
-    }
+  public void displayHealth(float x, float y, float Length, float Height) {
+    float healthBarTotalLength = Length;
+    float healthLeft = map(currentHealth, 0, maxHealth, 0, healthBarTotalLength);
+    stroke(0);
+    strokeWeight(1);
+    rectMode(CORNER);
+    //green health
+    fill(122, 60, 95);
+    rect(x, y, healthLeft, Height);
+    //red health
+    fill(359, 99, 99);
+    rect(x+ healthLeft, y, healthBarTotalLength-healthLeft, Height);
+  }
 
-    public void checkAlive() {
-        if (currentHealth <= 0) {
-             dead = true;
-         }
+  public void checkAlive() {
+    if (currentHealth <= 0) {
+      dead = true;
     }
+  }
 }
 class Insect extends Entity {
-    PVector location, velocity, acceleration;
-    float maxSpeed;
-    float maxForce;
-    float mass;
-    PVector currentDir;
-    int targetIndex; // in its list of targets, which one is it moving towards currently
-    PVector actualTarget;
-    PVector pathTarget;
-    PVector[] destinations;
-    float l,w;
-    Insect(PVector _location) {
-        super();
-        l = 10;
-        w = 10;
-        location = _location.copy();
+  PVector location, velocity, acceleration;
+  float maxSpeed;
+  float maxForce;
+  float mass;
+  PVector currentDir;
+  int targetIndex; // in its list of targets, which one is it moving towards currently
+  PVector actualTarget;
+  PVector pathTarget;
+  PVector[] destinations;
+  float l, w;
+  Insect(PVector _location) {
+    super();
+    l = 10;
+    w = 10;
+    location = _location.copy();
+    targetIndex = -1;
+    velocity = PVector.random2D().setMag(2);
+    acceleration = new PVector(0, 0);
+    maxSpeed = 2;
+    maxForce = 5;
+    mass = 1;
+  }
+
+  public void displayDebugInfo() {
+    stroke(0);
+    strokeWeight(1);
+    // float len = velocity.mag();
+    float stetch = 20.f;
+    line(location.x, location.y, location.x + stetch*velocity.x, location.y + stetch*velocity.y);
+
+    stroke(100);
+    strokeWeight(20);
+    point(actualTarget.x, actualTarget.y);
+  }
+
+  public void update() {
+    // println(targetIndex, destinations[targetIndex].x, destinations[targetIndex].y);
+    if (targetIndex != -1) {
+      changeTarget();
+      seek(actualTarget);
+      move();
+    }
+
+    display();
+    displayDebugInfo();
+    // println(velocity.x, velocity.y);
+  }
+
+  public void beginTracking(PVector[] _destinations) {
+    targetIndex = 0;
+    destinations = _destinations;
+    pathTarget = destinations[targetIndex];
+    calcTarget();
+    seek(actualTarget);
+  }
+  //dont fill, all child classes will have their own display function
+  public void display() {
+  }
+
+  public void move() {
+    velocity.add(acceleration);
+    velocity.limit(maxSpeed);
+    location.add(velocity);
+    acceleration.mult(0);
+  }
+
+  public void applyForce(PVector dir) {
+    PVector modified = dir.copy().div(mass);
+    acceleration.add(modified);
+  }
+
+  public void seek(PVector target) {
+    PVector dir = PVector.sub(target, location);
+    dir.limit(maxSpeed);
+    PVector goodDir = PVector.sub(dir, velocity);
+    //tyring to make them turn slowly towards the user
+    goodDir.limit(maxForce);
+    applyForce(goodDir);
+  }
+
+  public void changeTarget() {
+    // println("tried");
+    if (reached(actualTarget) == true) {
+      // println("changed target");
+      targetIndex++;
+      if (targetIndex >= destinations.length) {
         targetIndex = -1;
-        velocity = PVector.random2D().setMag(2);
-        acceleration = new PVector(0,0);
-        maxSpeed = 10;
-        maxForce = 5;
-        mass = 1;
-    }
-
-    public void displayDebugInfo(){
-        stroke(0);
-        strokeWeight(1);
-        // float len = velocity.mag();
-        float stetch = 20.f;
-        line(location.x, location.y, location.x + stetch*velocity.x, location.y + stetch*velocity.y);
-
-        stroke(100);
-        strokeWeight(20);
-        point(actualTarget.x, actualTarget.y);
-    }
-
-    public void update(){
-// println(targetIndex, destinations[targetIndex].x, destinations[targetIndex].y);
-        if(targetIndex != -1) {
-             changeTarget();
-             seek(actualTarget);
-             move();
-         }
-
-        display();
-        displayDebugInfo();
-        // println(velocity.x, velocity.y);
-    }
-
-    public void beginTracking(PVector[] _destinations){
-        targetIndex = 0;
-        destinations = _destinations;
-        pathTarget = destinations[targetIndex];
+      } else {
+        pathTarget = destinations[targetIndex].copy();
         calcTarget();
-        seek(actualTarget);
+      }
+    }
+  }
 
+  public void calcTarget() {
+    float x = pathTarget.x;
+    float y = pathTarget.y;
+    float margin = 1;
+    x += random(-margin, margin);
+    y += random(-margin, margin);
+    actualTarget = new PVector(x, y);
+  }
+
+  public boolean reached(PVector toGo) {
+
+    float left = location.x - w/2;
+    float right = location.x + w/2;
+    float top = location.y - l/2;
+    float bottom = location.y + l/2;
+    float x = toGo.x;
+    float y = toGo.y;
+    if (x >= left && x <= right && y >= top && y <= bottom) {
+      return true;
     }
 
-    public void display(){
-
-    }
-
-    public void move() {
-        velocity.add(acceleration);
-        velocity.limit(maxSpeed);
-        location.add(velocity);
-        acceleration.mult(0);
-    }
-
-    public void applyForce(PVector dir) {
-        PVector modified = dir.copy().div(mass);
-        acceleration.add(modified);
-    }
-
-    public void seek(PVector target) {
-        PVector dir = PVector.sub(target, location);
-        dir.limit(maxSpeed);
-        PVector goodDir = PVector.sub(dir, velocity);
-        //tyring to make them turn slowly towards the user
-        goodDir.limit(maxForce);
-        applyForce(goodDir);
-    }
-
-    public void changeTarget() {
-      // println("tried");
-        if (reached(actualTarget) == true) {
-             // println("changed target");
-             targetIndex++;
-             if (targetIndex >= destinations.length) {
-                  targetIndex = -1;
-              }else{
-             pathTarget = destinations[targetIndex].copy();
-             calcTarget();
-           }
-         }
-    }
-
-    public void calcTarget() {
-        float x = pathTarget.x;
-        float y = pathTarget.y;
-        float margin = 10;
-        x += random(-margin, margin);
-        y += random(-margin, margin);
-        actualTarget = new PVector(x, y);
-    }
-
-    public boolean reached(PVector toGo) {
-
-        float left = location.x - w/2;
-        float right = location.x + w/2;
-        float top = location.y - l/2;
-        float bottom = location.y + l/2;
-        float x = toGo.x;
-        float y = toGo.y;
-        if (x >= left && x <= right && y >= top && y <= bottom) {
-             return true;
-         }
-
-        return false;
-    }
+    return false;
+  }
 }
 
 class Aphid extends Insect {
-    Aphid(PVector _location) {
-        super(_location);
-    }
+  Aphid(PVector _location) {
+    super(_location);
+  }
 }
 
 class Ant extends Insect {
-    String antType;
+  String antType;
+  int c;
+  Ant(PVector _location) {
+    super(_location);
+  }
+  public void display() {
+    noStroke();
+    fill(c);
+    ellipse(location.x, location.y, l, w);
+  }
 
-    Ant(PVector _location) {
-        super(_location);
-    }
-    public void display() {
-        noStroke();
-        fill(antColors[antNameToIndex.get(antType)]);
-        ellipse(location.x, location.y, l, w);
-    }
+  public void setColor() {
+    c = antColors[antNameToIndex.get(antType)];
+  }
 }
 
 //builds/destroys things for colony
 class Worker extends Ant {
-    Worker(PVector _location) {
-        super(_location);
-        antType = "worker";
-    }
+  Worker(PVector _location) {
+    super(_location);
+    antType = "worker";
+    setColor(); // FIRGURE OUT SOME WAY TO NOT NEED TO CALL THIS MANUALLY IN EVERY CHILD OF THE ANT PARENT CLASS
+  }
 }
 // makes ants
 class Queen extends Ant {
-    Queen(PVector _location) {
-        super(_location);
-        antType = "queen";
-    }
+  Queen(PVector _location) {
+    super(_location);
+    antType = "queen";
+    setColor();
+  }
 }
 // fights other ants
 class Fighter extends Ant {
-    Fighter(PVector _location) {
-        super(_location);
-        antType = "figter";
-    }
+  Fighter(PVector _location) {
+    super(_location);
+    antType = "fighter";
+    setColor();
+  }
 }
 // looks for resources
 class Scouter extends Ant {
-    Scouter(PVector _location) {
-        super(_location);
-        antType = "scouter";
-    }
+  Scouter(PVector _location) {
+    super(_location);
+    antType = "scouter";
+    setColor();
+  }
 }
 
 class Segment extends Entity {
-    PVector start, end;
-    PVector currentDir;
-    float angle;
-    float Length;
-    float Width;
-    //PVector[] positions;
-    Segment(PVector _start, float _Length, float _Width) {
-        start = _start.copy();
-        Length = _Length;
-        Width = _Width;
-        end = new PVector(start.x + Length, start.y);
-        //positions = new PVector[2];
-        //positions[0] = start;
-        //positions[1] = end;
-        // println("SEGMENT MADE");
+  PVector start, end;
+  PVector currentDir;
+  float angle;
+  float Length;
+  float Width;
+  //PVector[] positions;
+  Segment(PVector _start, float _Length, float _Width) {
+    start = _start.copy();
+    Length = _Length;
+    Width = _Width;
+    end = new PVector(start.x + Length, start.y);
+    //positions = new PVector[2];
+    //positions[0] = start;
+    //positions[1] = end;
+    // println("SEGMENT MADE");
+  }
+
+  public boolean checkSegmentCollision(float iX, float iY, float iXLen, float iYLen) {
+    boolean total = false;
+    float x = (start.x + end.x)/2;
+    float y = (start.y + end.y)/2;
+    PVector dist = PVector.sub(start, end);
+    float xLen = abs(dist.x);
+    float yLen = abs(dist.y);
+    total = rectRectCollision(iX, iY, iXLen, iYLen, x, y, xLen, yLen);
+    return total;
+  }
+  //this is a mess
+  public void followTarget(PVector target, int index) {
+    PVector direction;
+    if (index == 0) {
+      direction = PVector.sub(target, start);
+    } else {
+      direction = PVector.sub(target, end);
     }
 
-    public boolean checkSegmentCollision(float iX, float iY, float iXLen, float iYLen) {
-        boolean total = false;
-        float x = (start.x + end.x)/2;
-        float y = (start.y + end.y)/2;
-        PVector dist = PVector.sub(start, end);
-        float xLen = abs(dist.x);
-        float yLen = abs(dist.y);
-        total = rectRectCollision(iX, iY, iXLen, iYLen, x, y, xLen, yLen);
-        return total;
+    direction.setMag(Length).mult(-1);
+
+    if (index == 0) {
+      start = PVector.add(target, direction);
+      end = target.copy();
+    } else {
+      end = PVector.add(target, direction);
+      start = target.copy();
     }
-    //this is a mess
-    public void followTarget(PVector target, int index) {
-        PVector direction;
-        if (index == 0) {
-             direction = PVector.sub(target, start);
-         } else {
-             direction = PVector.sub(target, end);
-         }
+  }
 
-        direction.setMag(Length).mult(-1);
+  public void update() {
+    float speed = 10;
+    float x = end.x + speed*randomGaussian();
+    float y = end.y + speed*randomGaussian();
+    PVector target = new PVector(x, y);
+    followTarget(target, 0);
+    display();
+  }
 
-        if (index == 0) {
-             start = PVector.add(target, direction);
-             end = target.copy();
-         } else {
-             end = PVector.add(target, direction);
-             start = target.copy();
-         }
-    }
+  public void display() {
+    stroke(0, 100);
+    strokeWeight(Width);
+    line(start.x, start.y, end.x, end.y);
+    strokeWeight(5);
+    stroke(100);
+    point(start.x, start.y);
+    //stroke(100);
+    point(end.x, end.y);
 
-    public void update() {
-        float speed = 10;
-        float x = end.x + speed*randomGaussian();
-        float y = end.y + speed*randomGaussian();
-        PVector target = new PVector(x, y);
-        followTarget(target, 0);
-        display();
-    }
+    // displayHealth(start.x, start.y, Length);
+  }
 
-    public void display() {
-        stroke(0, 100);
-        strokeWeight(Width);
-        line(start.x, start.y, end.x, end.y);
-        strokeWeight(5);
-        stroke(100);
-        point(start.x, start.y);
-        //stroke(100);
-        point(end.x, end.y);
-
-        // displayHealth(start.x, start.y, Length);
-    }
-
-    public void receiveHit(float damage) {
-        currentHealth -= damage;
-        checkAlive();
-    }
+  public void receiveHit(float damage) {
+    currentHealth -= damage;
+    checkAlive();
+  }
 }
 
 class WormMob extends Entity {
-    Segment[] segments;
-    PVector currentDirection;
-    float speed = 10;
-    PVector begining;
-    boolean hasDeadSegment = false;
-    int deadSegmentIndex = -1;
-    WormMob(PVector _start, int numSegments, float segmentLengths, float segmentWidths) {
-        super();
-        segments = new Segment[numSegments];
-        begining = _start.copy();
-        PVector location = new PVector();
-        // println("WORM MADE");
-        currentDirection = PVector.random2D().mult(speed);
-        for (int i = 0; i < segments.length; i++) {
-             location.set(begining.x + i*segmentLengths, begining.y);
-             segments[i] = new Segment(location, segmentLengths, segmentWidths);
-         }
+  Segment[] segments;
+  PVector currentDirection;
+  float speed = 10;
+  PVector begining;
+  boolean hasDeadSegment = false;
+  int deadSegmentIndex = -1;
+  WormMob(PVector _start, int numSegments, float segmentLengths, float segmentWidths) {
+    super();
+    segments = new Segment[numSegments];
+    begining = _start.copy();
+    PVector location = new PVector();
+    // println("WORM MADE");
+    currentDirection = PVector.random2D().mult(speed);
+    for (int i = 0; i < segments.length; i++) {
+      location.set(begining.x + i*segmentLengths, begining.y);
+      segments[i] = new Segment(location, segmentLengths, segmentWidths);
     }
-    //this is only used is snakes where new worms are made when the snake is broken at parts
-    //so this worm mob cant anchor to anywhere
-    WormMob(Segment[] _segments) {
+  }
+  //this is only used is snakes where new worms are made when the snake is broken at parts
+  //so this worm mob cant anchor to anywhere
+  WormMob(Segment[] _segments) {
 
-        super();
-        segments = _segments;
-        currentDirection = PVector.random2D().mult(speed);
-        // begining = start.copy();
+    super();
+    segments = _segments;
+    currentDirection = PVector.random2D().mult(speed);
+    // begining = start.copy();
+  }
+
+  public void anchor() {
+    int last = 0;
+    int first = segments.length-1;
+
+    segments[last].followTarget(begining.copy(), 1);
+    //segments[0].follow = begining.copy();
+    for (int i = last+1; i <= first; i++) {
+      segments[i].followTarget(segments[i-1].end, 1);
     }
-
-    public void anchor() {
-        int last = 0;
-        int first = segments.length-1;
-
-        segments[last].followTarget(begining.copy(), 1);
-        //segments[0].follow = begining.copy();
-        for (int i = last+1; i <= first; i++) {
-             segments[i].followTarget(segments[i-1].end, 1);
-         }
+  }
+  //when a worm is hit
+  public void receiveHitWorm(float damage, float x, float y, float xLen, float yLen) {
+    //at least 1 segment was hit
+    if (checkWormCollision(x, y, xLen, yLen).length > 0) {
+      currentHealth -= damage;
+      checkAlive();
     }
-    //when a worm is hit
-    public void receiveHitWorm(float damage, float x, float y, float xLen, float yLen) {
-        //at least 1 segment was hit
-        if (checkWormCollision(x, y, xLen, yLen).length > 0) {
-             currentHealth -= damage;
-             checkAlive();
-         }
+  }
+  //when a snake part is hit
+  public void receiveHitSegment(float damage, float x, float y, float xLen, float yLen) {
+    int[] targets = checkWormCollision(x, y, xLen, yLen);
+    for (int i = 0; i < targets.length; i++) {
+      Segment a = segments[targets[i]];
+      a.receiveHit(damage);
+      if (a.dead == true) {
+        hasDeadSegment = true;
+        deadSegmentIndex = targets[i];
+      }
     }
-    //when a snake part is hit
-    public void receiveHitSegment(float damage, float x, float y, float xLen, float yLen) {
-        int[] targets = checkWormCollision(x, y, xLen, yLen);
-        for (int i = 0; i < targets.length; i++) {
-             Segment a = segments[targets[i]];
-             a.receiveHit(damage);
-             if (a.dead == true) {
-                  hasDeadSegment = true;
-                  deadSegmentIndex = targets[i];
-              }
-         }
-    }
+  }
 
-    //returns the indices of the segment that is colliding with the given rectangle
-    public int[] checkWormCollision(float iX, float iY, float iXLen, float iYLen) {
-        int[] result;
-        IntList indices = new IntList();
-        boolean total = false;
-        for (int i = 0; i < segments.length; i++) {
-             Segment a = segments[i];
-             a.checkSegmentCollision(iX, iY, iXLen, iYLen);
-             if (a.checkSegmentCollision(iX, iY, iXLen, iYLen) == true) {
-                  total = true;
-                  indices.append(i);
-              }
-         }
-
-        result = indices.array();
-        return result;
+  //returns the indices of the segment that is colliding with the given rectangle
+  public int[] checkWormCollision(float iX, float iY, float iXLen, float iYLen) {
+    int[] result;
+    IntList indices = new IntList();
+    boolean total = false;
+    for (int i = 0; i < segments.length; i++) {
+      Segment a = segments[i];
+      a.checkSegmentCollision(iX, iY, iXLen, iYLen);
+      if (a.checkSegmentCollision(iX, iY, iXLen, iYLen) == true) {
+        total = true;
+        indices.append(i);
+      }
     }
 
-    public boolean checkInsideStage() {
-        //checking to see if all segment indices were returned to be collising with
-        Segment last = segments[segments.length - 1];
-        PVector point = last.end;
-        float margin = 100;
-        float leftS = -margin;
-        float rightS = width + margin;
-        float topS = -margin;
-        float bottomS = height + margin;
-        if (point.x > rightS || point.x < leftS || point.y > bottomS || point.y < topS) {
-             return false;
-         }
-        return true;
+    result = indices.array();
+    return result;
+  }
+
+  public boolean checkInsideStage() {
+    //checking to see if all segment indices were returned to be collising with
+    Segment last = segments[segments.length - 1];
+    PVector point = last.end;
+    float margin = 100;
+    float leftS = -margin;
+    float rightS = width + margin;
+    float topS = -margin;
+    float bottomS = height + margin;
+    if (point.x > rightS || point.x < leftS || point.y > bottomS || point.y < topS) {
+      return false;
     }
+    return true;
+  }
 
-    public void wander(PVector safePlace) {
+  public void wander(PVector safePlace) {
 
-        if (checkInsideStage() == true) {
-             currentDirection.rotate(0.2f*randomGaussian());
-         } else {
-             PVector toCenter = PVector.sub(segments[segments.length-1].end, safePlace);
-             currentDirection = toCenter.copy().normalize().rotate(radians(180)).mult(speed);
-         }
+    if (checkInsideStage() == true) {
+      currentDirection.rotate(0.2f*randomGaussian());
+    } else {
+      PVector toCenter = PVector.sub(segments[segments.length-1].end, safePlace);
+      currentDirection = toCenter.copy().normalize().rotate(radians(180)).mult(speed);
     }
+  }
 
-    public void move() {
-        followTarget(PVector.add(segments[segments.length-1].end, currentDirection));
+  public void move() {
+    followTarget(PVector.add(segments[segments.length-1].end, currentDirection));
+  }
+
+  public void followTarget(PVector target) {
+    segments[segments.length-1].followTarget(target, 0);
+    for (int i = segments.length-2; i >= 0; i--) {
+      segments[i].followTarget(segments[i+1].start, 0);
     }
+  }
 
-    public void followTarget(PVector target) {
-        segments[segments.length-1].followTarget(target, 0);
-        for (int i = segments.length-2; i >= 0; i--) {
-             segments[i].followTarget(segments[i+1].start, 0);
-         }
+  public void display(boolean showEachSegment) {
+
+    for (int i = 0; i < segments.length; i++) {
+      Segment a = segments[i];
+
+      float x = a.end.x;
+      float y = a.end.y;
+      float xLen = a.Length;
+      float yLen = a.Width;
+      if (showEachSegment == false) {
+        displayHealth(x, y, xLen, yLen);
+      } else {
+        a.displayHealth(x, y, xLen, yLen);
+      }
+
+      a.display();
     }
+  }
 
-    public void display(boolean showEachSegment) {
-
-        for (int i = 0; i < segments.length; i++) {
-             Segment a = segments[i];
-
-             float x = a.end.x;
-             float y = a.end.y;
-             float xLen = a.Length;
-             float yLen = a.Width;
-             if (showEachSegment == false) {
-                  displayHealth(x, y, xLen, yLen);
-              } else {
-                  a.displayHealth(x, y, xLen, yLen);
-              }
-
-             a.display();
-         }
+  public void update() {
+    if (segments.length > 0) {
+      wander(new PVector(0, 0));
+      move();
+      display(false);
     }
-
-    public void update() {
-        if (segments.length > 0) {
-             wander(new PVector(0, 0));
-             move();
-             display(false);
-         }
-    }
+  }
 }
 
 class Snake extends Entity {
-    ArrayList<WormMob> parts = new ArrayList<WormMob>();
-    Snake(PVector start, int segmentNum, float segmentLengths, float segmentWidths) {
-        super();
-        WormMob first = new WormMob(start, segmentNum, segmentLengths, segmentWidths);
-        parts.add(first);
+  ArrayList<WormMob> parts = new ArrayList<WormMob>();
+  Snake(PVector start, int segmentNum, float segmentLengths, float segmentWidths) {
+    super();
+    WormMob first = new WormMob(start, segmentNum, segmentLengths, segmentWidths);
+    parts.add(first);
+  }
+
+
+  public void update() {
+    for (int i = 0; i < parts.size(); i++) {
+      WormMob a = parts.get(i);
+      if (a.segments.length > 0) {
+        a.wander(new PVector(0, 0));
+        a.move();
+        a.display(true);
+      }
+      if (a.hasDeadSegment == true) {
+        // println("SOMETHING HAS SPLIT");
+        subDivide(i, a.deadSegmentIndex);
+      }
     }
+  }
 
+  public void subDivide(int wormIndex, int segmentIndex) {
+    //this wormsegment dies here
+    WormMob parent = parts.get(wormIndex);
 
-    public void update() {
-        for (int i = 0; i < parts.size(); i++) {
-             WormMob a = parts.get(i);
-             if (a.segments.length > 0) {
-                  a.wander(new PVector(0, 0));
-                  a.move();
-                  a.display(true);
-              }
-             if (a.hasDeadSegment == true) {
-                  // println("SOMETHING HAS SPLIT");
-                  subDivide(i, a.deadSegmentIndex);
-              }
-         }
+    if (parent.segments.length > 2) {
+      Segment[] segmentsL = (Segment[]) subset(parent.segments, 0, segmentIndex);
+      Segment[] segmentsR = (Segment[]) subset(parent.segments, segmentIndex+1);
+      WormMob left = new WormMob(segmentsL);
+      WormMob right = new WormMob(segmentsR);
+      parts.remove(wormIndex);
+      parts.add(wormIndex, left);
+      parts.add(wormIndex+1, right);
+    } else if (parent.segments.length == 2) {
+      Segment[] segs = {parent.segments[PApplet.parseInt(map(segmentIndex, 0, 1, 1, 0))]};
+      WormMob newParent = new WormMob(segs);
+      parts.set(wormIndex, newParent);
+    } else if (parent.segments.length == 1) {
+      parts.remove(wormIndex);
     }
-
-    public void subDivide(int wormIndex, int segmentIndex) {
-        //this wormsegment dies here
-        WormMob parent = parts.get(wormIndex);
-
-        if (parent.segments.length > 2) {
-             Segment[] segmentsL = (Segment[]) subset(parent.segments, 0, segmentIndex);
-             Segment[] segmentsR = (Segment[]) subset(parent.segments, segmentIndex+1);
-             WormMob left = new WormMob(segmentsL);
-             WormMob right = new WormMob(segmentsR);
-             parts.remove(wormIndex);
-             parts.add(wormIndex, left);
-             parts.add(wormIndex+1, right);
-         } else if (parent.segments.length == 2) {
-             Segment[] segs = {parent.segments[PApplet.parseInt(map(segmentIndex, 0, 1, 1, 0))]};
-             WormMob newParent = new WormMob(segs);
-             parts.set(wormIndex, newParent);
-         } else if (parent.segments.length == 1) {
-             parts.remove(wormIndex);
-         }
-    }
+  }
 }
 
 
@@ -741,6 +733,8 @@ public boolean rectRectCollision(float x1, float y1, float w1, float h1, float x
 // TRIANGLE/POINT
 public boolean triPoint(float x1, float y1, float x2, float y2, float x3, float y3, float px, float py) {
 
+  
+  float percentMarginOfError = .001f;
   // get the area of the triangle
   float areaOrig = abs( (x2-x1)*(y3-y1) - (x3-x1)*(y2-y1) );
 
@@ -752,7 +746,9 @@ public boolean triPoint(float x1, float y1, float x2, float y2, float x3, float 
 
   // if the sum of the three areas equals the original,
   // we're inside the triangle!
-  if (area1 + area2 + area3 == areaOrig) {
+  
+  float totalTempArea = area1 + area2 + area3;
+  if (totalTempArea*(1-percentMarginOfError) <= areaOrig && totalTempArea*(1+percentMarginOfError) >= areaOrig) {
     return true;
   }
   return false;
@@ -760,306 +756,229 @@ public boolean triPoint(float x1, float y1, float x2, float y2, float x3, float 
 
 
 class LandPlot {
-    LandSquare[] plots;
-    LandTriangle[] landTriangles;
-    int numRows;
-    int numCols;
-    int numSquareCols;
-    int numSquareRows;
-    float xWidth;
-    float yHeight;
+  //LandSquare[] plots;
+  LandTriangle[] landTriangles;
+  int numRows;
+  int numCols;
 
-    float xSquareWidth;
-    float ySquareHeight;
-    PVector center;
-    LandPlot(int _numCols, int _numRows, float _xWidth, float _yHeight) {
-        numRows = _numRows;
-        numCols = _numCols;
+  float xWidth;
+  float yHeight;
 
-        numSquareRows = numRows*2;
-        numSquareCols = numCols*2;
+  PVector center;
+  LandPlot(int _numCols, int _numRows, float _xWidth, float _yHeight) {
+    numRows = _numRows;
+    numCols = _numCols;
 
 
-        xWidth = _xWidth;
-        yHeight = _yHeight;
-
-        xSquareWidth = xWidth/2;
-        ySquareHeight = yHeight/2;
-
-        // plots = new LandSquare[numRows*numCols];
-        //
-        //
-        // for (int i = 0; i < numRows; i++) {
-        //      for (int j = 0; j < numCols; j++) {
-        //           center = new PVector(xWidth/2 + xWidth*j, yHeight/2 + yHeight*i);
-        //           LandTriangle[] temp = new LandTriangle[squareTriangles.length];
-        //           for (int k = 0; k < temp.length; k++) {
-        //                temp[k] = new LandTriangle(center, k, xWidth, yHeight);
-        //            }
-        //           plots[i*numCols + j] = new LandSquare(temp);
-        //       }
-        //  }
-        // landTriangles = new LandTriangle[plots.length*8];
-        //
-        // // println("jump : " + numCols*4);
-        //
-        // for(int y = 0; y < numRows; y++) {
-        //      for(int x = 0; x < numCols; x++) {
-        //           int triMakingIndex;
-        //           for(int i = 0; i < 4; i++) {
-        //                triMakingIndex = y*2*numCols*4 + x*4 + i;
-        //                // println(x,y,triMakingIndex);
-        //                landTriangles[triMakingIndex] = plots[y*numCols + x].tris[(7+i)%8];
-        //                triMakingIndex = (2*y+1)*numCols*4 + x*4 + i;
-        //                // println(x,y,triMakingIndex);
-        //                landTriangles[triMakingIndex] = plots[y*numCols + x].tris[6-i];
-        //
-        //            }
-        //
-        //       }
-        //  }
-        landTriangles = new LandTriangle[numSquareRows*numSquareCols*2];
-        //whether square is 0,0 - > 1,1 or 1,0 - > 0,1
-        int parity = 0;
-        int index = 0;
-        for(int row = 0; row < numSquareRows; row++) {
-             for(int col = 0; col < numSquareCols; col++) {
-                  // landTriangles[]
-                  index = ((col+parity)%2); // 0 or 1
-                  PVector topLeft = new PVector(col*xSquareWidth, row*ySquareHeight);
-                  //j is for the two triangles in 1 square
-                  PVector[] temp;
-                  for(int j = 0; j < 2; j++) {
-                       temp = new PVector[3];                             //j =  0      1                                         0    1
-                       for(int i = 0; i < temp.length; i++) {               //0, 2, 1, 3                                     //1,3, 2,4
-                            // float x = squareTriangles[index][i+3*j].x;
-                            // float y = squareTriangles[index][i+3*j].y;
-
-                            temp[i] = squareTriangles[index][i+3*j].copy();
-
-                        }
-                       landTriangles[row*numSquareCols*2 + col*2 + j] = new LandTriangle(temp, topLeft, xSquareWidth, ySquareHeight);
-                       // println(row*numSquareCols*2 + col*2 + j);
-                   }
-
-                  // println(index);
-              }
-             parity = (parity+1)%2;
-         }
-
-        // println("size : " + landTriangles.length);
+    xWidth = _xWidth;
+    yHeight = _yHeight;
 
 
+    landTriangles = new LandTriangle[numRows*numCols*2];
+    //whether square is 0,0 - > 1,1 or 1,0 - > 0,1
+    int parity = 0;
+    int index = 0;
+    for (int row = 0; row < numRows; row++) {
+      for (int col = 0; col < numCols; col++) {
+        // landTriangles[]
+        index = ((col+parity)%2); // 0 or 1
+        PVector topLeft = new PVector(col*xWidth, row*yHeight);
+        //j is for the two triangles in 1 square
+        PVector[] temp;
+        for (int j = 0; j < 2; j++) {
+          temp = new PVector[3];                             //j =  0      1                                         0    1
+          for (int i = 0; i < temp.length; i++) {               //0, 2, 1, 3                                     //1,3, 2,4
+
+            temp[i] = squareTriangles[index][i+3*j].copy();
+          }
+          int typeOfTriangle = index*2 + j;
+          landTriangles[row*numCols*2 + col*2 + j] = new LandTriangle(temp, topLeft, xWidth, yHeight, typeOfTriangle);
+          // println(row*numSquareCols*2 + col*2 + j);
+        }
+
+        // println(index);
+      }
+      parity = (parity+1)%2;
     }
 
-    public int findTriangleIndex(float x, float y){
-        //finds square that contains 2 triangles, 1 of them must countain the point
-        int squareIndex = PApplet.parseInt(x/xSquareWidth) + PApplet.parseInt((y/ySquareHeight)) * numSquareCols;
+    // println("size : " + landTriangles.length);
+  }
 
-        int correctIndex = -1;
-        for(int i = 0; i < 2; i++) {
-
-             if(landTriangles[squareIndex*2 + i].pointInside(x,y) == true) {
-                  correctIndex = squareIndex*2 + i;
-              }
-         }
-        return correctIndex;
+  public PVector[] randomTriangleCenters(int size) {
+    PVector[] lis = new PVector[size];
+    for (int i = 0; i < lis.length; i++) {
+      int randomTriangleIndex = PApplet.parseInt(random(0, landTriangles.length));
+      PVector centerPoint = centerTrianglePoint(landTriangles[randomTriangleIndex].vertexes);
+      lis[i] = centerPoint;
     }
 
-    public void newHighLight(float x, float y){
+    return lis;
+  }
 
-        int index = findTriangleIndex(x,y);
-        if(index != -1) {
-             landTriangles[index].hoveredOver = true;
-             landTriangles[index].display(color(60, 100, 100));
-         }
+  public int[] findTrianglePathFromTriangleToTriangle(int startIndex, int endIndex) {
+    IntList steps = new IntList();
 
+    return steps.array();
+  }
+
+  public void highLightSurroundingTriangles(float x, float y) {
+    int index = findTriangleIndex(x, y);
+    if (index != -1) {
+      int[] surroundingTrianglesIndexes =  findAdjecentTriangleIndexes(index);
+      for (int i = 0; i < surroundingTrianglesIndexes.length; i++) {
+        landTriangles[surroundingTrianglesIndexes[i]].highlight();
+      }
+    } else {
+      println("ERROR");
+      //couldn't find triangle
     }
-
-    public void changeTriangle(float x, float y) {
-        int index = findTriangleIndex(x,y);
-        if(index != -1) {
-             landTriangles[index].type = "water";
-         }
+  }
 
 
-        // int index = findLandPlotIndex(x, y);
-        // if (index != -1) {
-        //      int triIndex = plots[index].calcTriangleIndex(x, y);
-        //      if (triIndex != -1) {
-        //           //plots[index].tris[triIndex].oldC = tileColors[tileNameToIndex.get("stone")];
-        //           plots[index].tris[triIndex].type = "water";
-        //       }
-        //  }
+  PVector[][] adjecentTris = {
+    {new PVector(-1, 0, 1),
+      new PVector(0, 1, 0), //0 SW CORNER
+      new PVector(0, 0, 1)},
+
+    {new PVector(0, -1, 1),
+      new PVector(1, 0, 0), //1 NE CORNER
+      new PVector(0, 0, 0)},
+
+    {new PVector(-1, 0, 1),
+      new PVector(0, -1, 0), //2 NW CORNER
+      new PVector(0, 0, 1)},
+
+    {new PVector(0, 1, 1),
+      new PVector(1, 0, 0), //3 SE CORNER
+      new PVector(0, 0, 0)}
+
+  };
+
+  //x and y refer to the coordinates for the squares, index refers to an additional constant to get the correct triangle inside a square
+  public int[] findAdjecentTriangleIndexes(int triangleIndex) {
+    IntList triangleIndexes = new IntList();
+
+    int triType = landTriangles[triangleIndex].typeOfTriangle;
+    int centerX = PApplet.parseInt((triangleIndex/2))%(numCols);
+    int centerY = PApplet.parseInt(triangleIndex/(numCols*2));
+
+    PVector[] adjecentTriIndexCoordinates = adjecentTris[triType];
+    for (int i = 0; i < 3; i ++) {
+
+      int x = PApplet.parseInt(adjecentTriIndexCoordinates[i].x) + centerX;//add the middle index coordinates to the other coordinates to find the adjecent
+      int y = PApplet.parseInt(adjecentTriIndexCoordinates[i].y) + centerY;
+      int z = PApplet.parseInt(adjecentTriIndexCoordinates[i].z);
+      int tempIndex = x*2 + y*numCols*2 + z;
+      if (tempIndex >= 0 && tempIndex < landTriangles.length) {//if the index exists then add it to the adjecent indexes for this triangle // maybe check the x y z components individually if this fails
+        triangleIndexes.append(tempIndex);
+      }else{
+       println("SURROUNDING TRIANGLE NOT IN LIST");
+      }
     }
+    return triangleIndexes.array();
+  }
 
-    public void display() {
-        // for (int i = 0; i < plots.length; i+= 1) {
-        //      plots[i].display();
-        //  }
-        for(int i = 0; i < landTriangles.length; i++) {
+  public int findTriangleIndex(float x, float y) {
+    if (x < numCols*xWidth && x > 0 && y > 0 && y < numCols*yHeight) {
+      //finds square that contains 2 triangles, 1 of them must countain the point
+      int squareIndex = PApplet.parseInt(x/xWidth) + PApplet.parseInt((y/yHeight)) * numCols;
 
-             landTriangles[i].display(color(0));
-         }
+      int correctIndex = -1;
+      for (int i = 0; i < 2; i++) {
+
+        if (landTriangles[squareIndex*2 + i].pointInside(x, y) == true) {
+          correctIndex = squareIndex*2 + i;
+        }
+      }
+      if (correctIndex == -1) {
+        println("POINT NOT INSIDE EITHER TRIAGNLE IN SQUARE");
+      }
+      return correctIndex;
+    } else {
+      println("POINT NOT INSIDE THE SCREEN");
+      return -1;
     }
+  }
 
-    public int findLandPlotIndex(float x, float y) {
-
-        float newX = x/xWidth;
-        float newY = y/yHeight;
-
-        return PApplet.parseInt(newX) + PApplet.parseInt(newY)*numCols;
+  public void changeTriangle(float x, float y) {
+    int index = findTriangleIndex(x, y);
+    if (index != -1) {
+      landTriangles[index].type = "water";
     }
+  }
 
-    public void highlightLandTriangleSelected(float x, float y) {
-        int index = checkValidPlotIndex(x, y);
-        if (index != -1) {
-             plots[index].highlight(x, y);
-         } else {
-             //couldn't find triangle
-         }
+  public void display() {
+    for (int i = 0; i < landTriangles.length; i++) {
+
+      landTriangles[i].display(color(0));
     }
+  }
 
-    public void highlightSurroundingLandTrianglesSelected(float x, float y){
-        int index = checkValidPlotIndex(x, y);
-        if(index != -1) {
-             LandSquare a = plots[index];
-             int temp = a.calcTriangleIndex(x,y);
-             // if triangle is in a certain part of the sqaure, then select the square to that touches that triangle
-             int adjacentSquareDirection = PApplet.parseInt(temp/2);// north, east, south, west
-             // int adjacentSquareDirection = index
-             int oldX = index%numCols;
-             int oldY = PApplet.parseInt(index/numRows);
-             int newX = oldX - PApplet.parseInt(sin(adjacentSquareDirection*PI/2));
-             int newY = oldY - PApplet.parseInt(cos(adjacentSquareDirection*PI/2));
-             int adjacentSquareIndex = newY*numCols + newX;// check if this is valid
-             if(newX < numCols && newX >= 0 && newY < numRows && newY >= 0) {
-                  // int adjecentTriangleIndex = (int(index/2)*4 + (5-index))%8; // maybe just try this array to convert 1 triangle in a square to adjecent triangle in adjecent square
-                  int[] triangleConversion = {5,4,7,6,1,0,3,2};
-                  int adjacentTriangleIndex = triangleConversion[index];
-              }else{
-                  //no triangle adjecent
-              }
-
-         }
+  public void highlightLandTriangleSelected(float x, float y) {
+    int index = findTriangleIndex(x, y);
+    if (index != -1) {
+      landTriangles[index].highlight();
+    } else {
+      println("ERROR");
+      //couldn't find triangle
     }
-
-    public int checkValidPlotIndex(float x, float y) {
-
-        if (x < numCols*xWidth && x > 0 && y > 0 && y < numRows*yHeight) {
-             return findLandPlotIndex(x, y);
-         }
-        return -1;
-    }
+  }
 }
 
-
-class LandSquare {
-    PVector center;
-    LandTriangle[] tris;
-    LandSquare(LandTriangle[] _tris) {
-        tris = _tris;
-        center = tris[0].vertexes[0].copy();
-    }
-
-    public void display() {
-        for (int i = 0; i < tris.length; i++) {
-             tris[i].display(color(0));
-         }
-    }
-
-    public void highlight(float x, float y) {
-        int index = calcTriangleIndex(x, y);
-        if (index != -1) {
-
-
-             tris[index].hoveredOver = true;
-             tris[index].display(color(60, 100, 100));
-         } else {
-             //couldn't find a index for this triangle
-         }
-    }
-
-
-    public int calcTriangleIndex(float x, float y) {
-        PVector mouse = new PVector(x, y);
-        PVector pointer = PVector.sub(mouse, center);
-        float angle = degrees(pointer.heading()) + 180;// +180 to remove negatives from range
-
-        int index = convertAngleToIndex(angle);
-
-        return index;
-    }
-
-    public int convertAngleToIndex(float angle) {
-        for (int i = 0; i < angles.length-1; i++) {
-             if (angle > angles[i] && angle < angles[i+1]) {
-                  return i;
-              }
-         }
-        if (angle < angles[0] || angle > angles[angles.length-1]) {
-             return angles.length-1;
-         }
-        return -1;
-    }
-}
 
 class LandTriangle {
-    int curC, oldC;
-    String type;
-    PVector[] vertexes = new PVector[3];
-    PVector[] imageVertexes = new PVector[vertexes.length];
-    boolean hoveredOver;
-    // PVector fir, sec;
-    // LandTriangle(PVector center, int index, float xWidth, float yHeight) {
-    LandTriangle(PVector[] _vertexes, PVector topLeft, float xWidth, float yHeight) {
-        hoveredOver = false;
-        //curC = tileColors[tileNameToIndex.get("dirt")];
-        oldC = curC;
-        type = "dirt";
+  int curC, oldC;
+  String type;
+  PVector[] vertexes = new PVector[3];
+  PVector[] imageVertexes = new PVector[vertexes.length];
+  boolean hoveredOver;
+  int typeOfTriangle;
 
-        imageVertexes = _vertexes;
-        for(int i = 0; i < imageVertexes.length; i++) {
-             vertexes[i] =  new PVector(topLeft.x + imageVertexes[i].x*xWidth, topLeft.y + imageVertexes[i].y*yHeight);
-             // println(imageVertexes[i].x, imageVertexes[i].y);
-         }
+  LandTriangle(PVector[] _vertexes, PVector topLeft, float xWidth, float yHeight, int _typeOfTriangle) {
+    hoveredOver = false;
+    //curC = tileColors[tileNameToIndex.get("dirt")];
+    oldC = curC;
+    type = "dirt";
 
-        // fir = squareTriangles[index][0];
-        // sec = squareTriangles[index][1];
-        // vertexes[0] = center.copy();
-        //
-        // vertexes[1] = new PVector(center.x + .5 * xWidth * fir.x, center.y + .5* yHeight *fir.y);
-        // vertexes[2] = new PVector(center.x + .5 * xWidth * sec.x, center.y + .5* yHeight *sec.y);
+    imageVertexes = _vertexes;
+    for (int i = 0; i < imageVertexes.length; i++) {
+      vertexes[i] =  new PVector(topLeft.x + imageVertexes[i].x*xWidth, topLeft.y + imageVertexes[i].y*yHeight);
+      // println(imageVertexes[i].x, imageVertexes[i].y);
     }
 
-    public void display(int c) {
-        strokeWeight(4);
-        noStroke();
-        fill(curC);
-        if (hoveredOver == true) {
-             noFill();
-             stroke(c);
-             triangle(vertexes[0].x, vertexes[0].y, vertexes[1].x, vertexes[1].y, vertexes[2].x, vertexes[2].y);
-         } else {
-             tint(360, imageOpacities[imageNameToIndex.get(type)]);
-             beginShape();
-             textureMode(NORMAL);
-             texture(allImages[imageNameToIndex.get(type)]);
-             // vertex(vertexes[0].x, vertexes[0].y, 0.5, 0.5);
-             // vertex(vertexes[1].x, vertexes[1].y, map(fir.x, -1, 1, 0, 1), map(fir.y, -1, 1, 0, 1));
-             // vertex(vertexes[2].x, vertexes[2].y, map(sec.x, -1, 1, 0, 1), map(sec.y, -1, 1, 0, 1));
-             vertex(vertexes[0].x, vertexes[0].y, imageVertexes[0].x, imageVertexes[0].y);
-             vertex(vertexes[1].x, vertexes[1].y, imageVertexes[1].x, imageVertexes[1].y);
-             vertex(vertexes[2].x, vertexes[2].y, imageVertexes[2].x, imageVertexes[2].y);
-             endShape();
-         }
-        hoveredOver = false;
-        curC = oldC;
-    }
+    typeOfTriangle = _typeOfTriangle;
+  }
 
-    public boolean pointInside(float x, float y){
-        return triPoint(vertexes[0].x, vertexes[0].y, vertexes[1].x, vertexes[1].y, vertexes[2].x, vertexes[2].y, x,y);
+  public void highlight() {
+    hoveredOver = true;
+    display(color(60, 100, 100));
+  }
+
+  public void display(int c) {
+    strokeWeight(4);
+    noStroke();
+    fill(curC);
+    if (hoveredOver == true) {
+      noFill();
+      stroke(c);
+      triangle(vertexes[0].x, vertexes[0].y, vertexes[1].x, vertexes[1].y, vertexes[2].x, vertexes[2].y);
+    } else {
+      tint(360, imageOpacities[imageNameToIndex.get(type)]);
+      beginShape();
+      textureMode(NORMAL);
+      texture(allImages[imageNameToIndex.get(type)]);
+      vertex(vertexes[0].x, vertexes[0].y, imageVertexes[0].x, imageVertexes[0].y);
+      vertex(vertexes[1].x, vertexes[1].y, imageVertexes[1].x, imageVertexes[1].y);
+      vertex(vertexes[2].x, vertexes[2].y, imageVertexes[2].x, imageVertexes[2].y);
+      endShape();
     }
+    hoveredOver = false;
+    curC = oldC;
+  }
+
+  public boolean pointInside(float x, float y) {
+    return triPoint(vertexes[0].x, vertexes[0].y, vertexes[1].x, vertexes[1].y, vertexes[2].x, vertexes[2].y, x, y);
+  }
 }
 
 
