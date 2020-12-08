@@ -67,7 +67,7 @@ class LandPlot {
   }
 
   void highLightSurroundingTriangles(float x, float y) {
-    int index = findTriangleIndex(x, y); 
+    int index = findTriangleIndex(x, y);
     if (index != -1) {
       int[] surroundingTrianglesIndexes =  findAdjecentTriangleIndexes(index);
       for (int i = 0; i < surroundingTrianglesIndexes.length; i++) {
@@ -81,21 +81,21 @@ class LandPlot {
 
 
   PVector[][] adjecentTris = {
-    {new PVector(-1, 0, 1), 
+    {new PVector(-1, 0, 1),
       new PVector(0, 1, 0), //0 SW CORNER
-      new PVector(0, 0, 1)}, 
+      new PVector(0, 0, 1)},
 
-    {new PVector(0, -1, 1), 
+    {new PVector(0, -1, 1),
       new PVector(1, 0, 0), //1 NE CORNER
-      new PVector(0, 0, 0)}, 
+      new PVector(0, 0, 0)},
 
-    {new PVector(-1, 0, 1), 
+    {new PVector(-1, 0, 1),
       new PVector(0, -1, 0), //2 NW CORNER
-      new PVector(0, 0, 1)}, 
+      new PVector(0, 0, 1)},
 
-    {new PVector(0, 1, 1), 
+    {new PVector(0, 1, 1),
       new PVector(1, 0, 0), //3 SE CORNER
-      new PVector(0, 0, 0)} 
+      new PVector(0, 0, 0)}
 
   };
 
@@ -106,20 +106,25 @@ class LandPlot {
     int triType = landTriangles[triangleIndex].typeOfTriangle;
     int centerX = int((triangleIndex/2))%(numCols);
     int centerY = int(triangleIndex/(numCols*2));
- 
+
     PVector[] adjecentTriIndexCoordinates = adjecentTris[triType];
     for (int i = 0; i < 3; i ++) {
 
-      int x = int(adjecentTriIndexCoordinates[i].x) + centerX;//add the middle index coordinates to the other coordinates to find the adjecent 
+      int x = int(adjecentTriIndexCoordinates[i].x) + centerX;//add the middle index coordinates to the other coordinates to find the adjecent
       int y = int(adjecentTriIndexCoordinates[i].y) + centerY;
       int z = int(adjecentTriIndexCoordinates[i].z);
       int tempIndex = x*2 + y*numCols*2 + z;
+      if(x >= 0 && x < numCols){
+        if(y >= 0 && y < numRows){
       if (tempIndex >= 0 && tempIndex < landTriangles.length) {//if the index exists then add it to the adjecent indexes for this triangle // maybe check the x y z components individually if this fails
         triangleIndexes.append(tempIndex);
       }else{
-       println("SURROUNDING TRIANGLE NOT IN LIST"); 
+       println("gitHub Works");
       }
+
     }
+    }
+  }
     return triangleIndexes.array();
   }
 
