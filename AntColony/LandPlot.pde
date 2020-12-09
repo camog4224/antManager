@@ -11,7 +11,7 @@ class LandPlot {
  float xWidth;
  float yHeight;
 
-
+int[] tempPath;
 
 
  LandPlot(int _numCols, int _numRows, float _xWidth, float _yHeight) {
@@ -88,6 +88,7 @@ class LandPlot {
  int[] findTrianglePathFromTriangleToTriangle(int startIndex, int endIndex) {
   IntList openSet = new IntList();
   IntList closedSet = new IntList();
+  resetNodeVals();
   openSet.append(startIndex);
   int maxNumInterations = 100;
   int interationNum = 0;
@@ -98,10 +99,11 @@ class LandPlot {
 
 //set the current node in the open set to the one that has the lowest f value
 
-    float closestVal = 100000000;
+    float closestVal = width*height;
     for(int i = 0; i < openSet.size(); i++) {
       if(nodes[openSet.get(i)].f < closestVal) {
       closestIndex = openSet.get(i);
+      closestVal = nodes[closestIndex].f;
        }
      }
 
