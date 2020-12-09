@@ -1,14 +1,13 @@
 /*
    use A* algorithm to pathfind ants from tile A to tile B, then use centers of trianlges as targets, use tower defense target
  seeking to move ant from A to B
- 
+
  use either bezierVertex() or bezierPoint() to proceduraly make the textures for the game
- 
- 
+
+
  check if process is stupid in image compression, like if resizing a 900x900 to a
  100x100 makes it look horrible like doing the inverse would do(prob try in dif program)
  */
-
 
 IntDict imageNameToIndex;
 
@@ -43,14 +42,14 @@ PVector[][] squareTriangles = {
 };
 // north, east, south, west
 int[] triangleDirections = {
-  0, 
-  0, 
-  1, 
-  1, 
-  2, 
-  2, 
-  3, 
-  3, 
+  0,
+  0,
+  1,
+  1,
+  2,
+  2,
+  3,
+  3,
 };
 
 float[] angles = new float[8];
@@ -73,6 +72,18 @@ void setup() {
   float[] start= {175, 7, PI/8, 1, .6, 0.1, 0.5, 0}; // start values for tree
 
   tree = new Tree(start);
+}
+
+IntList removeFromIntList(IntList lis, int val){
+int[] tempArray = lis.array();
+int valIndex = -1;
+for(int i = 0; i < tempArray.length; i++){
+  if(tempArray[i] == val){
+    valIndex = i;
+}
+}
+lis.remove(valIndex);
+return lis;
 }
 
 
@@ -132,22 +143,23 @@ void draw() {
   a.highLightSurroundingTriangles(mouseX, mouseY);
   //tree.display();
 
-  for (int i = 0; i < ants.length; i++) {
-    ants[i].update();
-  }
+  // for (int i = 0; i < ants.length; i++) {
+  //   ants[i].update();
+  // }
 }
 
 void mouseDragged() {
-  a.changeTriangle(mouseX, mouseY);
+  // a.changeTriangle(mouseX, mouseY);
 }
 
 void mousePressed() {
-  a.changeTriangle(mouseX, mouseY);
+  // a.changeTriangle(mouseX, mouseY);
   // println(a.findTriangleIndex(mouseX, mouseY));
 }
 
 void keyPressed() {
-  tree.reCreate();
+  // tree.reCreate();
+  a.createPath(int(random(0,20)), int(random(20,40)));
 }
 
 PVector[] PVectorListToArray(ArrayList<PVector> lis) {

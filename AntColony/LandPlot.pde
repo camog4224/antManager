@@ -3,13 +3,15 @@
 class LandPlot {
  //LandSquare[] plots;
  LandTriangle[] landTriangles;
+ Node[] nodes;
+
  int numRows;
  int numCols;
 
  float xWidth;
  float yHeight;
 
- PVector center;
+
 
 
  LandPlot(int _numCols, int _numRows, float _xWidth, float _yHeight) {
@@ -22,6 +24,7 @@ class LandPlot {
 
 
   landTriangles = new LandTriangle[numRows*numCols*2];
+  nodes = new Node[landTriangles.length];
   //whether square is 0,0 - > 1,1 or 1,0 - > 0,1
   int parity = 0;
   int index = 0;
@@ -48,7 +51,16 @@ class LandPlot {
     parity = (parity+1)%2;
    }
 
+   for(int i = 0; i < nodes.length; i++){
+     nodes[i] = new Node(i, landTriangles[i].center, findAdjecentTriangleIndexes(i));
+   }
+
   // println("size : " + landTriangles.length);
+ }
+
+ float heuristic(int start, int end){
+   PVector temp = PVector.sub(nodes[start].location, nodes[end].location);
+   return temp.mag();
  }
 
 
@@ -63,25 +75,95 @@ class LandPlot {
   return lis;
  }
 
+ void resetNodeVals(){
+   for(int i = 0; i < nodes.length; i++){
+     nodes[i].init();
+   }
+ }
+
+ void createPath(int start, int end){
+   changePath(findTrianglePathFromTriangleToTriangle(start, end));
+ }
+
  int[] findTrianglePathFromTriangleToTriangle(int startIndex, int endIndex) {
   IntList openSet = new IntList();
   IntList closedSet = new IntList();
   openSet.append(startIndex);
   int maxNumInterations = 100;
   int interationNum = 0;
-
+  int closestIndex = startIndex;
   while(openSet.size() > 0 && interationNum < maxNumInterations) {
+    println("iteration num : " + interationNum);
+    println("closestIndex num : " + closestIndex);
 
-    int lowestIndex = startIndex;
+//set the current node in the open set to the one that has the lowest f value
+
+    float closestVal = 100000000;
     for(int i = 0; i < openSet.size(); i++) {
-      // if(openSet.get(i)) {
-      //
-      //  }
+      if(nodes[openSet.get(i)].f < closestVal) {
+      closestIndex = openSet.get(i);
+       }
      }
-    interationNum++;
+
+     // Node currentNode = nodes[closestIndex];
+     if(closestIndex == endIndex){
+       //found the endpoint
+       break;//should probably calc the final route to return at the end of the function
+     }
+     openSet = removeFromIntList(openSet, closestIndex);
+     closedSet.append(closestIndex);
+
+int[] tempNeighbors = nodes[closestIndex].neighbors;
+for(int i = 0; i < tempNeighbors.length; i++){
+  int currentNeighborIndex = tempNeighbors[i];
+
+  if(closedSet.hasValue(currentNeighborIndex) == false){//not in closed set
+    println("found neighbor not in closed list");
+    Node neighbor = nodes[currentNeighborIndex];
+    float tempG = neighbor.g + 1;
+    if(openSet.hasValue(currentNeighborIndex) == true){
+      if(tempG < neighbor.g){
+        neighbor.g = tempG;
+      }
+
+    }else{
+      neighbor.g = tempG;
+      openSet.append(currentNeighborIndex);
+    }
+
+    neighbor.h = heuristic(currentNeighborIndex, endIndex);
+    neighbor.f = neighbor.g + neighbor.h;
+    neighbor.before = closestIndex;
+    nodes[currentNeighborIndex] = neighbor;
+  }
+}
+interationNum++;
+println("open set : " + openSet.size());
+println("closed set : " + closedSet.size());
+}
+if(interationNum >= maxNumInterations){
+  println("HIT MAX");
+}
+
+    return traceBack(endIndex);
    }
-  return null;
- }
+
+   int[] traceBack(int endIndex){
+     IntList steps = new IntList();
+     int curIndex = endIndex;
+     int interationNum = 0;
+     int maxIterationNum = 100;
+     while(nodes[curIndex].before != -1 && interationNum < maxIterationNum){//keep going backward until you hit a node that doesnt have a previous node
+       steps.append(curIndex);
+       curIndex = nodes[curIndex].before;
+       interationNum++;
+     }
+     steps.append(curIndex);
+     return steps.array();
+   }
+
+
+
 
  void highLightSurroundingTriangles(float x, float y) {
   int index = findTriangleIndex(x, y);
@@ -167,8 +249,13 @@ class LandPlot {
    }
  }
 
- void changeTriangle(float x, float y) {
-  int index = findTriangleIndex(x, y);
+void changePath(int[] indexes){
+  for(int i = 0; i < indexes.length; i++){
+    changeTriangle(indexes[i]);
+  }
+}
+
+ void changeTriangle(int index) {
   if (index != -1) {
     landTriangles[index].type = "water";
    }
@@ -255,4 +342,31 @@ class LandTriangle {
  boolean pointInside(float x, float y) {
   return triPoint(vertexes[0].x, vertexes[0].y, vertexes[1].x, vertexes[1].y, vertexes[2].x, vertexes[2].y, x, y);
  }
+}
+
+class Node{
+int index;
+PVector location;
+int[] neighbors;
+
+float f;
+float g;
+float h;
+
+int before;
+
+Node(int _index, PVector _location, int[] _neighbors){
+  index = _index;
+  location = _location.copy();
+  neighbors = _neighbors;
+init();
+}
+
+void init(){
+  f = 0;
+  g = 0;
+  h = 0;
+  before = -1;
+}
+
 }

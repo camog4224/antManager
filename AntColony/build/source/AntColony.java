@@ -17,14 +17,13 @@ public class AntColony extends PApplet {
 /*
    use A* algorithm to pathfind ants from tile A to tile B, then use centers of trianlges as targets, use tower defense target
  seeking to move ant from A to B
- 
+
  use either bezierVertex() or bezierPoint() to proceduraly make the textures for the game
- 
- 
+
+
  check if process is stupid in image compression, like if resizing a 900x900 to a
  100x100 makes it look horrible like doing the inverse would do(prob try in dif program)
  */
-
 
 IntDict imageNameToIndex;
 
@@ -59,14 +58,14 @@ PVector[][] squareTriangles = {
 };
 // north, east, south, west
 int[] triangleDirections = {
-  0, 
-  0, 
-  1, 
-  1, 
-  2, 
-  2, 
-  3, 
-  3, 
+  0,
+  0,
+  1,
+  1,
+  2,
+  2,
+  3,
+  3,
 };
 
 float[] angles = new float[8];
@@ -89,6 +88,18 @@ public void setup() {
   float[] start= {175, 7, PI/8, 1, .6f, 0.1f, 0.5f, 0}; // start values for tree
 
   tree = new Tree(start);
+}
+
+public IntList removeFromIntList(IntList lis, int val){
+int[] tempArray = lis.array();
+int valIndex = -1;
+for(int i = 0; i < tempArray.length; i++){
+  if(tempArray[i] == val){
+    valIndex = i;
+}
+}
+lis.remove(valIndex);
+return lis;
 }
 
 
@@ -148,22 +159,23 @@ public void draw() {
   a.highLightSurroundingTriangles(mouseX, mouseY);
   //tree.display();
 
-  for (int i = 0; i < ants.length; i++) {
-    ants[i].update();
-  }
+  // for (int i = 0; i < ants.length; i++) {
+  //   ants[i].update();
+  // }
 }
 
 public void mouseDragged() {
-  a.changeTriangle(mouseX, mouseY);
+  // a.changeTriangle(mouseX, mouseY);
 }
 
 public void mousePressed() {
-  a.changeTriangle(mouseX, mouseY);
+  // a.changeTriangle(mouseX, mouseY);
   // println(a.findTriangleIndex(mouseX, mouseY));
 }
 
 public void keyPressed() {
-  tree.reCreate();
+  // tree.reCreate();
+  a.createPath(PApplet.parseInt(random(0,20)), PApplet.parseInt(random(20,40)));
 }
 
 public PVector[] PVectorListToArray(ArrayList<PVector> lis) {
@@ -758,13 +770,15 @@ public boolean triPoint(float x1, float y1, float x2, float y2, float x3, float 
 class LandPlot {
  //LandSquare[] plots;
  LandTriangle[] landTriangles;
+ Node[] nodes;
+
  int numRows;
  int numCols;
 
  float xWidth;
  float yHeight;
 
- PVector center;
+
 
 
  LandPlot(int _numCols, int _numRows, float _xWidth, float _yHeight) {
@@ -777,6 +791,7 @@ class LandPlot {
 
 
   landTriangles = new LandTriangle[numRows*numCols*2];
+  nodes = new Node[landTriangles.length];
   //whether square is 0,0 - > 1,1 or 1,0 - > 0,1
   int parity = 0;
   int index = 0;
@@ -803,7 +818,16 @@ class LandPlot {
     parity = (parity+1)%2;
    }
 
+   for(int i = 0; i < nodes.length; i++){
+     nodes[i] = new Node(i, landTriangles[i].center, findAdjecentTriangleIndexes(i));
+   }
+
   // println("size : " + landTriangles.length);
+ }
+
+ public float heuristic(int start, int end){
+   PVector temp = PVector.sub(nodes[start].location, nodes[end].location);
+   return temp.mag();
  }
 
 
@@ -818,25 +842,95 @@ class LandPlot {
   return lis;
  }
 
+ public void resetNodeVals(){
+   for(int i = 0; i < nodes.length; i++){
+     nodes[i].init();
+   }
+ }
+
+ public void createPath(int start, int end){
+   changePath(findTrianglePathFromTriangleToTriangle(start, end));
+ }
+
  public int[] findTrianglePathFromTriangleToTriangle(int startIndex, int endIndex) {
   IntList openSet = new IntList();
   IntList closedSet = new IntList();
   openSet.append(startIndex);
   int maxNumInterations = 100;
   int interationNum = 0;
-
+  int closestIndex = startIndex;
   while(openSet.size() > 0 && interationNum < maxNumInterations) {
+    println("iteration num : " + interationNum);
+    println("closestIndex num : " + closestIndex);
 
-    int lowestIndex = startIndex;
+//set the current node in the open set to the one that has the lowest f value
+
+    float closestVal = 100000000;
     for(int i = 0; i < openSet.size(); i++) {
-      // if(openSet.get(i)) {
-      //
-      //  }
+      if(nodes[openSet.get(i)].f < closestVal) {
+      closestIndex = openSet.get(i);
+       }
      }
-    interationNum++;
+
+     // Node currentNode = nodes[closestIndex];
+     if(closestIndex == endIndex){
+       //found the endpoint
+       break;//should probably calc the final route to return at the end of the function
+     }
+     openSet = removeFromIntList(openSet, closestIndex);
+     closedSet.append(closestIndex);
+
+int[] tempNeighbors = nodes[closestIndex].neighbors;
+for(int i = 0; i < tempNeighbors.length; i++){
+  int currentNeighborIndex = tempNeighbors[i];
+
+  if(closedSet.hasValue(currentNeighborIndex) == false){//not in closed set
+    println("found neighbor not in closed list");
+    Node neighbor = nodes[currentNeighborIndex];
+    float tempG = neighbor.g + 1;
+    if(openSet.hasValue(currentNeighborIndex) == true){
+      if(tempG < neighbor.g){
+        neighbor.g = tempG;
+      }
+
+    }else{
+      neighbor.g = tempG;
+      openSet.append(currentNeighborIndex);
+    }
+
+    neighbor.h = heuristic(currentNeighborIndex, endIndex);
+    neighbor.f = neighbor.g + neighbor.h;
+    neighbor.before = closestIndex;
+    nodes[currentNeighborIndex] = neighbor;
+  }
+}
+interationNum++;
+println("open set : " + openSet.size());
+println("closed set : " + closedSet.size());
+}
+if(interationNum >= maxNumInterations){
+  println("HIT MAX");
+}
+
+    return traceBack(endIndex);
    }
-  return null;
- }
+
+   public int[] traceBack(int endIndex){
+     IntList steps = new IntList();
+     int curIndex = endIndex;
+     int interationNum = 0;
+     int maxIterationNum = 100;
+     while(nodes[curIndex].before != -1 && interationNum < maxIterationNum){//keep going backward until you hit a node that doesnt have a previous node
+       steps.append(curIndex);
+       curIndex = nodes[curIndex].before;
+       interationNum++;
+     }
+     steps.append(curIndex);
+     return steps.array();
+   }
+
+
+
 
  public void highLightSurroundingTriangles(float x, float y) {
   int index = findTriangleIndex(x, y);
@@ -922,8 +1016,13 @@ class LandPlot {
    }
  }
 
- public void changeTriangle(float x, float y) {
-  int index = findTriangleIndex(x, y);
+public void changePath(int[] indexes){
+  for(int i = 0; i < indexes.length; i++){
+    changeTriangle(indexes[i]);
+  }
+}
+
+ public void changeTriangle(int index) {
   if (index != -1) {
     landTriangles[index].type = "water";
    }
@@ -1010,6 +1109,33 @@ class LandTriangle {
  public boolean pointInside(float x, float y) {
   return triPoint(vertexes[0].x, vertexes[0].y, vertexes[1].x, vertexes[1].y, vertexes[2].x, vertexes[2].y, x, y);
  }
+}
+
+class Node{
+int index;
+PVector location;
+int[] neighbors;
+
+float f;
+float g;
+float h;
+
+int before;
+
+Node(int _index, PVector _location, int[] _neighbors){
+  index = _index;
+  location = _location.copy();
+  neighbors = _neighbors;
+init();
+}
+
+public void init(){
+  f = 0;
+  g = 0;
+  h = 0;
+  before = -1;
+}
+
 }
 
 
