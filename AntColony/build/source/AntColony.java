@@ -155,13 +155,22 @@ public void draw() {
   noTint();
   image(background, 0, 0);
   a.display();
-  //a.highlightLandTriangleSelected(mouseX, mouseY);
-  a.highLightSurroundingTriangles(mouseX, mouseY);
+  a.highlightLandTrianglePosition(mouseX, mouseY, color(60, 100, 100));
+drawPath();
   //tree.display();
 
   // for (int i = 0; i < ants.length; i++) {
   //   ants[i].update();
   // }
+}
+
+public void drawPath(){
+  if(start != -1){
+  a.highlightLandTriangleIndex(start, color(110, 100, 100));
+  }
+  if(end != -1){
+  a.highlightLandTriangleIndex(end, color(0, 100, 100));
+}
 }
 
 public void mouseDragged() {
@@ -778,352 +787,359 @@ public boolean triPoint(float x1, float y1, float x2, float y2, float x3, float 
 
 
 class LandPlot {
- //LandSquare[] plots;
- LandTriangle[] landTriangles;
- Node[] nodes;
+//LandSquare[] plots;
+LandTriangle[] landTriangles;
+Node[] nodes;
 
- int numRows;
- int numCols;
+int numRows;
+int numCols;
 
- float xWidth;
- float yHeight;
+float xWidth;
+float yHeight;
 
 int[] tempPath;
 
 
- LandPlot(int _numCols, int _numRows, float _xWidth, float _yHeight) {
-  numRows = _numRows;
-  numCols = _numCols;
+LandPlot(int _numCols, int _numRows, float _xWidth, float _yHeight) {
+        numRows = _numRows;
+        numCols = _numCols;
 
 
-  xWidth = _xWidth;
-  yHeight = _yHeight;
+        xWidth = _xWidth;
+        yHeight = _yHeight;
 
 
-  landTriangles = new LandTriangle[numRows*numCols*2];
-  nodes = new Node[landTriangles.length];
-  //whether square is 0,0 - > 1,1 or 1,0 - > 0,1
-  int parity = 0;
-  int index = 0;
-  for (int row = 0; row < numRows; row++) {
-    for (int col = 0; col < numCols; col++) {
-      // landTriangles[]
-      index = ((col+parity)%2); // 0 or 1
-      PVector topLeft = new PVector(col*xWidth, row*yHeight);
-      //j is for the two triangles in 1 square
-      PVector[] temp;
-      for (int j = 0; j < 2; j++) {
-        temp = new PVector[3];                             //j =  0      1                                         0    1
-        for (int i = 0; i < temp.length; i++) {               //0, 2, 1, 3                                     //1,3, 2,4
+        landTriangles = new LandTriangle[numRows*numCols*2];
+        nodes = new Node[landTriangles.length];
+        //whether square is 0,0 - > 1,1 or 1,0 - > 0,1
+        int parity = 0;
+        int index = 0;
+        for (int row = 0; row < numRows; row++) {
+                for (int col = 0; col < numCols; col++) {
+                        // landTriangles[]
+                        index = ((col+parity)%2); // 0 or 1
+                        PVector topLeft = new PVector(col*xWidth, row*yHeight);
+                        //j is for the two triangles in 1 square
+                        PVector[] temp;
+                        for (int j = 0; j < 2; j++) {
+                                temp = new PVector[3];       //j =  0      1                                         0    1
+                                for (int i = 0; i < temp.length; i++) { //0, 2, 1, 3                                     //1,3, 2,4
 
-          temp[i] = squareTriangles[index][i+3*j].copy();
-         }
-        int typeOfTriangle = index*2 + j;
-        landTriangles[row*numCols*2 + col*2 + j] = new LandTriangle(temp, topLeft, xWidth, yHeight, typeOfTriangle);
-        // println(row*numSquareCols*2 + col*2 + j);
-       }
+                                        temp[i] = squareTriangles[index][i+3*j].copy();
+                                }
+                                int typeOfTriangle = index*2 + j;
+                                landTriangles[row*numCols*2 + col*2 + j] = new LandTriangle(temp, topLeft, xWidth, yHeight, typeOfTriangle);
+                                // println(row*numSquareCols*2 + col*2 + j);
+                        }
 
-      // println(index);
-     }
-    parity = (parity+1)%2;
-   }
+                        // println(index);
+                }
+                parity = (parity+1)%2;
+        }
 
-   for(int i = 0; i < nodes.length; i++){
-     nodes[i] = new Node(i, landTriangles[i].center, findAdjecentTriangleIndexes(i));
-   }
+        for(int i = 0; i < nodes.length; i++) {
+                nodes[i] = new Node(i, landTriangles[i].center, findAdjecentTriangleIndexes(i));
+        }
 
-  // println("size : " + landTriangles.length);
- }
-
- public float heuristic(int start, int end){
-   PVector temp = PVector.sub(nodes[start].location, nodes[end].location);
-   return temp.mag();
- }
-
-
- public PVector[] randomTriangleCenters(int size) {
-  PVector[] lis = new PVector[size];
-  for (int i = 0; i < lis.length; i++) {
-    int randomTriangleIndex = PApplet.parseInt(random(0, landTriangles.length));
-    PVector centerPoint = landTriangles[randomTriangleIndex].center;
-    lis[i] = centerPoint;
-   }
-
-  return lis;
- }
-
- public void resetNodeVals(){
-   for(int i = 0; i < nodes.length; i++){
-     nodes[i].init();
-   }
- }
-
- public void createPath(int start, int end){
-   changePath(findTrianglePathFromTriangleToTriangle(start, end));
- }
-
- public int[] findTrianglePathFromTriangleToTriangle(int startIndex, int endIndex) {
-  IntList openSet = new IntList();
-  IntList closedSet = new IntList();
-  resetNodeVals();
-  openSet.append(startIndex);
-  int maxNumInterations = 100;
-  int interationNum = 0;
-  int closestIndex = startIndex;
-  while(openSet.size() > 0 && interationNum < maxNumInterations) {
-    // println("iteration num : " + interationNum);
-    // println("closestIndex num : " + closestIndex);
-
-//set the current node in the open set to the one that has the lowest f value
-
-    float closestVal = width*height;
-    for(int i = 0; i < openSet.size(); i++) {
-      if(nodes[openSet.get(i)].f < closestVal) {
-      closestIndex = openSet.get(i);
-      closestVal = nodes[closestIndex].f;
-       }
-     }
-
-     // Node currentNode = nodes[closestIndex];
-     if(closestIndex == endIndex){
-       //found the endpoint
-       break;//should probably calc the final route to return at the end of the function
-     }
-     openSet = removeFromIntList(openSet, closestIndex);
-     closedSet.append(closestIndex);
-
-int[] tempNeighbors = nodes[closestIndex].neighbors;
-for(int i = 0; i < tempNeighbors.length; i++){
-  int currentNeighborIndex = tempNeighbors[i];
-
-  if(closedSet.hasValue(currentNeighborIndex) == false){//not in closed set
-    // println("found neighbor not in closed list");
-    Node neighbor = nodes[currentNeighborIndex];
-    float tempG = neighbor.g + 1;
-    if(openSet.hasValue(currentNeighborIndex) == true){
-      if(tempG < neighbor.g){
-        neighbor.g = tempG;
-      }
-
-    }else{
-      neighbor.g = tempG;
-      openSet.append(currentNeighborIndex);
-    }
-
-    neighbor.h = heuristic(currentNeighborIndex, endIndex);
-    neighbor.f = neighbor.g + neighbor.h;
-    neighbor.before = closestIndex;
-    nodes[currentNeighborIndex] = neighbor;
-  }
-}
-interationNum++;
-// println("open set : " + openSet.size());
-// println("closed set : " + closedSet.size());
-}
-if(interationNum >= maxNumInterations){
-  // println("HIT MAX");
+        // println("size : " + landTriangles.length);
 }
 
-    return traceBack(endIndex);
-   }
-
-   public int[] traceBack(int endIndex){
-     IntList steps = new IntList();
-     int curIndex = endIndex;
-     int interationNum = 0;
-     int maxIterationNum = 100;
-     while(nodes[curIndex].before != -1 && interationNum < maxIterationNum){//keep going backward until you hit a node that doesnt have a previous node
-       steps.append(curIndex);
-       curIndex = nodes[curIndex].before;
-       interationNum++;
-     }
-     steps.append(curIndex);
-     return steps.array();
-   }
+public float heuristic(int start, int end){
+        PVector temp = PVector.sub(nodes[start].location, nodes[end].location);
+        return temp.mag();
+}
 
 
+public PVector[] randomTriangleCenters(int size) {
+        PVector[] lis = new PVector[size];
+        for (int i = 0; i < lis.length; i++) {
+                int randomTriangleIndex = PApplet.parseInt(random(0, landTriangles.length));
+                PVector centerPoint = landTriangles[randomTriangleIndex].center;
+                lis[i] = centerPoint;
+        }
+
+        return lis;
+}
+
+public void resetNodeVals(){
+        for(int i = 0; i < nodes.length; i++) {
+                nodes[i].init();
+        }
+}
+
+public void createPath(int start, int end){
+        changePath(findTrianglePathFromTriangleToTriangle(start, end));
+}
+
+public int[] findTrianglePathFromTriangleToTriangle(int startIndex, int endIndex) {
+        IntList openSet = new IntList();
+        IntList closedSet = new IntList();
+        resetNodeVals();
+        openSet.append(startIndex);
+        int maxNumInterations = 100;
+        int interationNum = 0;
+        int closestIndex = startIndex;
+        while(openSet.size() > 0 && interationNum < maxNumInterations) {
+                // println("iteration num : " + interationNum);
+                // println("closestIndex num : " + closestIndex);
+
+                //set the current node in the open set to the one that has the lowest f value
+
+                float closestVal = width*height;
+                for(int i = 0; i < openSet.size(); i++) {
+                        if(nodes[openSet.get(i)].f < closestVal) {
+                                closestIndex = openSet.get(i);
+                                closestVal = nodes[closestIndex].f;
+                        }
+                }
+
+                // Node currentNode = nodes[closestIndex];
+                if(closestIndex == endIndex) {
+                        //found the endpoint
+                        break;//should probably calc the final route to return at the end of the function
+                }
+                openSet = removeFromIntList(openSet, closestIndex);
+                closedSet.append(closestIndex);
+                String filter = "stone"; // will see this type of triangle as a obstacle that it cannot go through
+                int[] tempNeighbors = nodes[closestIndex].neighbors;
+                for(int i = 0; i < tempNeighbors.length; i++) {
+                        int currentNeighborIndex = tempNeighbors[i];
+                        if(landTriangles[currentNeighborIndex].type.equals(filter) == false ) {
+                                if(closedSet.hasValue(currentNeighborIndex) == false) {//not in closed set
+                                        // println("found neighbor not in closed list");
+                                        Node neighbor = nodes[currentNeighborIndex];
+                                        float tempG = neighbor.g + 1;
+                                        if(openSet.hasValue(currentNeighborIndex) == true) {
+                                                if(tempG < neighbor.g) {
+                                                        neighbor.g = tempG;
+                                                }
+
+                                        }else{
+                                                neighbor.g = tempG;
+                                                openSet.append(currentNeighborIndex);
+                                        }
+
+                                        neighbor.h = heuristic(currentNeighborIndex, endIndex);
+                                        neighbor.f = neighbor.g + neighbor.h;
+                                        neighbor.before = closestIndex;
+                                        nodes[currentNeighborIndex] = neighbor;
+                                }
+                        }
+                }
+                interationNum++;
+                // println("open set : " + openSet.size());
+                // println("closed set : " + closedSet.size());
+        }
+        if(interationNum >= maxNumInterations) {
+                // println("HIT MAX");
+        }
+
+        return traceBack(endIndex);
+}
+
+public int[] traceBack(int endIndex){
+        IntList steps = new IntList();
+        int curIndex = endIndex;
+        int interationNum = 0;
+        int maxIterationNum = 100;
+        while(nodes[curIndex].before != -1 && interationNum < maxIterationNum) {//keep going backward until you hit a node that doesnt have a previous node
+                steps.append(curIndex);
+                curIndex = nodes[curIndex].before;
+                interationNum++;
+        }
+        steps.append(curIndex);
+        return steps.array();
+}
+
+public void highLightSurroundingTriangles(float x, float y, int outline) {
+        int index = findTriangleIndex(x, y);
+        if (index != -1) {
+                highlightSurroundingTrianglesIndex(index, outline);
+        } else {
+                // println("ERROR");
+                //couldn't find triangle
+        }
+}
+
+public void highlightSurroundingTrianglesIndex(int index, int outline){
+        int[] surroundingTrianglesIndexes =  findAdjecentTriangleIndexes(index);
+        for (int i = 0; i < surroundingTrianglesIndexes.length; i++) {
+                landTriangles[surroundingTrianglesIndexes[i]].highlight(outline);
+        }
+}
 
 
- public void highLightSurroundingTriangles(float x, float y) {
-  int index = findTriangleIndex(x, y);
-  if (index != -1) {
-    int[] surroundingTrianglesIndexes =  findAdjecentTriangleIndexes(index);
-    for (int i = 0; i < surroundingTrianglesIndexes.length; i++) {
-      landTriangles[surroundingTrianglesIndexes[i]].highlight();
-     }
-   } else {
-    // println("ERROR");
-    //couldn't find triangle
-   }
- }
+PVector[][] adjecentTris = {
+        //SW CORNER
+        {new PVector(-1, 0, 1),
+         new PVector(0, 1, 0),
+         new PVector(0, 0, 1)},
+        //1 NE CORNER
+        {new PVector(0, -1, 1),
+         new PVector(1, 0, 0),
+         new PVector(0, 0, 0)},
+        //2 NW CORNER
+        {new PVector(-1, 0, 1),
+         new PVector(0, -1, 0),
+         new PVector(0, 0, 1)},
+        //3 SE CORNER
+        {new PVector(0, 1, 1),
+         new PVector(1, 0, 0),
+         new PVector(0, 0, 0)}
 
+};
 
- PVector[][] adjecentTris = {
-  {new PVector(-1, 0, 1),
-   new PVector(0, 1, 0), //0 SW CORNER
-   new PVector(0, 0, 1)},
+//x and y refer to the coordinates for the squares, index refers to an additional constant to get the correct triangle inside a square
+public int[] findAdjecentTriangleIndexes(int triangleIndex) {
+        IntList triangleIndexes = new IntList();
 
-  {new PVector(0, -1, 1),
-   new PVector(1, 0, 0), //1 NE CORNER
-   new PVector(0, 0, 0)},
+        int triType = landTriangles[triangleIndex].typeOfTriangle;
+        int centerX = PApplet.parseInt((triangleIndex/2))%(numCols);
+        int centerY = PApplet.parseInt(triangleIndex/(numCols*2));
 
-  {new PVector(-1, 0, 1),
-   new PVector(0, -1, 0), //2 NW CORNER
-   new PVector(0, 0, 1)},
+        PVector[] adjecentTriIndexCoordinates = adjecentTris[triType];
+        for (int i = 0; i < 3; i++) {
 
-  {new PVector(0, 1, 1),
-   new PVector(1, 0, 0), //3 SE CORNER
-   new PVector(0, 0, 0)}
+                int x = PApplet.parseInt(adjecentTriIndexCoordinates[i].x) + centerX;  //add the middle index coordinates to the other coordinates to find the adjecent
+                int y = PApplet.parseInt(adjecentTriIndexCoordinates[i].y) + centerY;
+                int z = PApplet.parseInt(adjecentTriIndexCoordinates[i].z);
+                int tempIndex = x*2 + y*numCols*2 + z;
+                if(x >= 0 && x < numCols) {
+                        if(y >= 0 && y < numRows) {
+                                if (tempIndex >= 0 && tempIndex < landTriangles.length) {//if the index exists then add it to the adjecent indexes for this triangle // maybe check the x y z components individually if this fails
+                                        triangleIndexes.append(tempIndex);
+                                }else{
+                                        // println("t");
+                                }
 
- };
+                        }
+                }
+        }
+        return triangleIndexes.array();
+}
 
- //x and y refer to the coordinates for the squares, index refers to an additional constant to get the correct triangle inside a square
- public int[] findAdjecentTriangleIndexes(int triangleIndex) {
-  IntList triangleIndexes = new IntList();
+public int findTriangleIndex(float x, float y) {
+        if (x < numCols*xWidth && x > 0 && y > 0 && y < numCols*yHeight) {
+                //finds square that contains 2 triangles, 1 of them must countain the point
+                int squareIndex = PApplet.parseInt(x/xWidth) + PApplet.parseInt((y/yHeight)) * numCols;
 
-  int triType = landTriangles[triangleIndex].typeOfTriangle;
-  int centerX = PApplet.parseInt((triangleIndex/2))%(numCols);
-  int centerY = PApplet.parseInt(triangleIndex/(numCols*2));
+                int correctIndex = -1;
+                for (int i = 0; i < 2; i++) {
 
-  PVector[] adjecentTriIndexCoordinates = adjecentTris[triType];
-  for (int i = 0; i < 3; i++) {
-
-    int x = PApplet.parseInt(adjecentTriIndexCoordinates[i].x) + centerX;//add the middle index coordinates to the other coordinates to find the adjecent
-    int y = PApplet.parseInt(adjecentTriIndexCoordinates[i].y) + centerY;
-    int z = PApplet.parseInt(adjecentTriIndexCoordinates[i].z);
-    int tempIndex = x*2 + y*numCols*2 + z;
-    if(x >= 0 && x < numCols) {
-      if(y >= 0 && y < numRows) {
-        if (tempIndex >= 0 && tempIndex < landTriangles.length) {//if the index exists then add it to the adjecent indexes for this triangle // maybe check the x y z components individually if this fails
-          triangleIndexes.append(tempIndex);
-         }else{
-          // println("t");
-         }
-
-       }
-     }
-   }
-  return triangleIndexes.array();
- }
-
- public int findTriangleIndex(float x, float y) {
-  if (x < numCols*xWidth && x > 0 && y > 0 && y < numCols*yHeight) {
-    //finds square that contains 2 triangles, 1 of them must countain the point
-    int squareIndex = PApplet.parseInt(x/xWidth) + PApplet.parseInt((y/yHeight)) * numCols;
-
-    int correctIndex = -1;
-    for (int i = 0; i < 2; i++) {
-
-      if (landTriangles[squareIndex*2 + i].pointInside(x, y) == true) {
-        correctIndex = squareIndex*2 + i;
-       }
-     }
-    if (correctIndex == -1) {
-      // println("POINT NOT INSIDE EITHER TRIAGNLE IN SQUARE");
-     }
-    return correctIndex;
-   } else {
-    // println("POINT NOT INSIDE THE SCREEN");
-    return -1;
-   }
- }
+                        if (landTriangles[squareIndex*2 + i].pointInside(x, y) == true) {
+                                correctIndex = squareIndex*2 + i;
+                        }
+                }
+                if (correctIndex == -1) {
+                        // println("POINT NOT INSIDE EITHER TRIAGNLE IN SQUARE");
+                }
+                return correctIndex;
+        } else {
+                // println("POINT NOT INSIDE THE SCREEN");
+                return -1;
+        }
+}
 
 public void changePath(int[] indexes){
-  for(int i = 0; i < indexes.length; i++){
-    changeTriangle(indexes[i]);
-  }
+        for(int i = 0; i < indexes.length; i++) {
+                changeTriangle(indexes[i]);
+        }
 }
 
- public void changeTriangle(int index) {
-  if (index != -1) {
-    landTriangles[index].type = "water";
-   }
- }
+public void changeTriangle(int index) {
+        if (index != -1) {
+                landTriangles[index].type = "water";
+        }
+}
 
- public void display() {
-  for (int i = 0; i < landTriangles.length; i++) {
+public void display() {
+        for (int i = 0; i < landTriangles.length; i++) {
 
-    landTriangles[i].display(color(0));
-   }
- }
+                landTriangles[i].display(color(0));
+        }
+}
 
- public void highlightLandTriangleSelected(float x, float y) {
-  int index = findTriangleIndex(x, y);
-  if (index != -1) {
-    landTriangles[index].highlight();
-   } else {
-    // println("ERROR");
-    //couldn't find triangle
-   }
- }
+public void highlightLandTriangleIndex(int index, int outline){
+        if (index != -1) {
+                landTriangles[index].highlight(outline);
+        } else {
+                // println("ERROR");
+                //couldn't find triangle
+        }
+}
+
+public void highlightLandTrianglePosition(float x, float y, int outline) {
+        int index = findTriangleIndex(x, y);
+        highlightLandTriangleIndex(index, outline);
+}
 }
 
 
 class LandTriangle {
- int curC, oldC;
- String type;
- PVector[] vertexes = new PVector[3];
- PVector[] imageVertexes = new PVector[vertexes.length];
- PVector center;
- boolean hoveredOver;
- int typeOfTriangle;
+int curC, oldC;
+String type;
+PVector[] vertexes = new PVector[3];
+PVector[] imageVertexes = new PVector[vertexes.length];
+PVector center;
+boolean hoveredOver;
+int typeOfTriangle;
 
- LandTriangle(PVector[] _vertexes, PVector topLeft, float xWidth, float yHeight, int _typeOfTriangle) {
-  hoveredOver = false;
-  //curC = tileColors[tileNameToIndex.get("dirt")];
-  oldC = curC;
-  type = "dirt";
+LandTriangle(PVector[] _vertexes, PVector topLeft, float xWidth, float yHeight, int _typeOfTriangle) {
+        hoveredOver = false;
+        //curC = tileColors[tileNameToIndex.get("dirt")];
+        oldC = curC;
+        type = "dirt";
 
-  imageVertexes = _vertexes;
-  float tempX = 0;
-  float tempY = 0;
-  for (int i = 0; i < imageVertexes.length; i++) {
-    float x = topLeft.x + imageVertexes[i].x*xWidth;
-    float y = topLeft.y + imageVertexes[i].y*yHeight;
-    vertexes[i] =  new PVector(x, y);
-    tempX += x;
-    tempY += y;
+        imageVertexes = _vertexes;
+        float tempX = 0;
+        float tempY = 0;
+        for (int i = 0; i < imageVertexes.length; i++) {
+                float x = topLeft.x + imageVertexes[i].x*xWidth;
+                float y = topLeft.y + imageVertexes[i].y*yHeight;
+                vertexes[i] =  new PVector(x, y);
+                tempX += x;
+                tempY += y;
 
-   }
+        }
 
 
-  center = new PVector(tempX/3.f, tempY/3.f);
-  typeOfTriangle = _typeOfTriangle;
- }
-
- public void highlight() {
-  hoveredOver = true;
-  display(color(60, 100, 100));
- }
-
- public void display(int c) {
-  strokeWeight(4);
-  noStroke();
-  fill(curC);
-  if (hoveredOver == true) {
-    noFill();
-    stroke(c);
-    triangle(vertexes[0].x, vertexes[0].y, vertexes[1].x, vertexes[1].y, vertexes[2].x, vertexes[2].y);
-   } else {
-    tint(360, imageOpacities[imageNameToIndex.get(type)]);
-    beginShape();
-    textureMode(NORMAL);
-    texture(allImages[imageNameToIndex.get(type)]);
-    vertex(vertexes[0].x, vertexes[0].y, imageVertexes[0].x, imageVertexes[0].y);
-    vertex(vertexes[1].x, vertexes[1].y, imageVertexes[1].x, imageVertexes[1].y);
-    vertex(vertexes[2].x, vertexes[2].y, imageVertexes[2].x, imageVertexes[2].y);
-    endShape();
-   }
-  hoveredOver = false;
-  curC = oldC;
- }
-
- public boolean pointInside(float x, float y) {
-  return triPoint(vertexes[0].x, vertexes[0].y, vertexes[1].x, vertexes[1].y, vertexes[2].x, vertexes[2].y, x, y);
- }
+        center = new PVector(tempX/3.f, tempY/3.f);
+        typeOfTriangle = _typeOfTriangle;
 }
 
-class Node{
+public void highlight(int outline) {
+        hoveredOver = true;
+        display(outline);
+}
+
+public void display(int c) {
+        strokeWeight(4);
+        noStroke();
+        fill(curC);
+        if (hoveredOver == true) {
+                noFill();
+                stroke(c);
+                triangle(vertexes[0].x, vertexes[0].y, vertexes[1].x, vertexes[1].y, vertexes[2].x, vertexes[2].y);
+        } else {
+                tint(360, imageOpacities[imageNameToIndex.get(type)]);
+                beginShape();
+                textureMode(NORMAL);
+                texture(allImages[imageNameToIndex.get(type)]);
+                vertex(vertexes[0].x, vertexes[0].y, imageVertexes[0].x, imageVertexes[0].y);
+                vertex(vertexes[1].x, vertexes[1].y, imageVertexes[1].x, imageVertexes[1].y);
+                vertex(vertexes[2].x, vertexes[2].y, imageVertexes[2].x, imageVertexes[2].y);
+                endShape();
+        }
+        hoveredOver = false;
+        curC = oldC;
+}
+
+public boolean pointInside(float x, float y) {
+        return triPoint(vertexes[0].x, vertexes[0].y, vertexes[1].x, vertexes[1].y, vertexes[2].x, vertexes[2].y, x, y);
+}
+}
+
+class Node {
 int index;
 PVector location;
 int[] neighbors;
@@ -1135,17 +1151,17 @@ float h;
 int before;
 
 Node(int _index, PVector _location, int[] _neighbors){
-  index = _index;
-  location = _location.copy();
-  neighbors = _neighbors;
-init();
+        index = _index;
+        location = _location.copy();
+        neighbors = _neighbors;
+        init();
 }
 
 public void init(){
-  f = 0;
-  g = 0;
-  h = 0;
-  before = -1;
+        f = 0;
+        g = 0;
+        h = 0;
+        before = -1;
 }
 
 }

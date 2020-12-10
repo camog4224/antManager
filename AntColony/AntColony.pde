@@ -139,13 +139,22 @@ void draw() {
   noTint();
   image(background, 0, 0);
   a.display();
-  //a.highlightLandTriangleSelected(mouseX, mouseY);
-  a.highLightSurroundingTriangles(mouseX, mouseY);
+  a.highlightLandTrianglePosition(mouseX, mouseY, color(60, 100, 100));
+drawPath();
   //tree.display();
 
   // for (int i = 0; i < ants.length; i++) {
   //   ants[i].update();
   // }
+}
+
+void drawPath(){
+  if(start != -1){
+  a.highlightLandTriangleIndex(start, color(110, 100, 100));
+  }
+  if(end != -1){
+  a.highlightLandTriangleIndex(end, color(0, 100, 100));
+}
 }
 
 void mouseDragged() {
