@@ -58,8 +58,8 @@ Tree tree;
 
 void setup() {
   fullScreen(P2D);
-  int numCols = 10;
-  int numRows = 7;
+  int numCols = 30;
+  int numRows = 15;
   float xWidth = width/float(numCols);
   float yHeight = height/float(numRows);
   //float xTheta = calcXTheta(xWidth, yHeight);
@@ -75,15 +75,15 @@ void setup() {
 }
 
 IntList removeFromIntList(IntList lis, int val){
-int[] tempArray = lis.array();
-int valIndex = -1;
-for(int i = 0; i < tempArray.length; i++){
+  int[] tempArray = lis.array();
+  int valIndex = -1;
+  for(int i = 0; i < tempArray.length; i++){
   if(tempArray[i] == val){
     valIndex = i;
-}
-}
-lis.remove(valIndex);
-return lis;
+  }
+  }
+  lis.remove(valIndex);
+  return lis;
 }
 
 
@@ -157,9 +157,19 @@ void mousePressed() {
   // println(a.findTriangleIndex(mouseX, mouseY));
 }
 
+int start;
+int end;
+
 void keyPressed() {
   // tree.reCreate();
-  a.createPath(int(random(0,20)), int(random(20,40)));
+  if(key == 'q'){
+start = a.findTriangleIndex(mouseX, mouseY);
+  }else if(key == 'w'){
+end = a.findTriangleIndex(mouseX, mouseY);
+  }else if(key == ' '){
+    a.createPath(start, end);
+  }
+
 }
 
 PVector[] PVectorListToArray(ArrayList<PVector> lis) {

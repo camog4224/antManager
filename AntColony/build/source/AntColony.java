@@ -74,8 +74,8 @@ Tree tree;
 
 public void setup() {
   
-  int numCols = 10;
-  int numRows = 7;
+  int numCols = 30;
+  int numRows = 15;
   float xWidth = width/PApplet.parseFloat(numCols);
   float yHeight = height/PApplet.parseFloat(numRows);
   //float xTheta = calcXTheta(xWidth, yHeight);
@@ -91,15 +91,15 @@ public void setup() {
 }
 
 public IntList removeFromIntList(IntList lis, int val){
-int[] tempArray = lis.array();
-int valIndex = -1;
-for(int i = 0; i < tempArray.length; i++){
+  int[] tempArray = lis.array();
+  int valIndex = -1;
+  for(int i = 0; i < tempArray.length; i++){
   if(tempArray[i] == val){
     valIndex = i;
-}
-}
-lis.remove(valIndex);
-return lis;
+  }
+  }
+  lis.remove(valIndex);
+  return lis;
 }
 
 
@@ -173,9 +173,19 @@ public void mousePressed() {
   // println(a.findTriangleIndex(mouseX, mouseY));
 }
 
+int start;
+int end;
+
 public void keyPressed() {
   // tree.reCreate();
-  a.createPath(PApplet.parseInt(random(0,20)), PApplet.parseInt(random(20,40)));
+  if(key == 'q'){
+start = a.findTriangleIndex(mouseX, mouseY);
+  }else if(key == 'w'){
+end = a.findTriangleIndex(mouseX, mouseY);
+  }else if(key == ' '){
+    a.createPath(start, end);
+  }
+
 }
 
 public PVector[] PVectorListToArray(ArrayList<PVector> lis) {
@@ -861,8 +871,8 @@ int[] tempPath;
   int interationNum = 0;
   int closestIndex = startIndex;
   while(openSet.size() > 0 && interationNum < maxNumInterations) {
-    println("iteration num : " + interationNum);
-    println("closestIndex num : " + closestIndex);
+    // println("iteration num : " + interationNum);
+    // println("closestIndex num : " + closestIndex);
 
 //set the current node in the open set to the one that has the lowest f value
 
@@ -887,7 +897,7 @@ for(int i = 0; i < tempNeighbors.length; i++){
   int currentNeighborIndex = tempNeighbors[i];
 
   if(closedSet.hasValue(currentNeighborIndex) == false){//not in closed set
-    println("found neighbor not in closed list");
+    // println("found neighbor not in closed list");
     Node neighbor = nodes[currentNeighborIndex];
     float tempG = neighbor.g + 1;
     if(openSet.hasValue(currentNeighborIndex) == true){
@@ -907,11 +917,11 @@ for(int i = 0; i < tempNeighbors.length; i++){
   }
 }
 interationNum++;
-println("open set : " + openSet.size());
-println("closed set : " + closedSet.size());
+// println("open set : " + openSet.size());
+// println("closed set : " + closedSet.size());
 }
 if(interationNum >= maxNumInterations){
-  println("HIT MAX");
+  // println("HIT MAX");
 }
 
     return traceBack(endIndex);
@@ -942,7 +952,7 @@ if(interationNum >= maxNumInterations){
       landTriangles[surroundingTrianglesIndexes[i]].highlight();
      }
    } else {
-    println("ERROR");
+    // println("ERROR");
     //couldn't find triangle
    }
  }
@@ -1009,11 +1019,11 @@ if(interationNum >= maxNumInterations){
        }
      }
     if (correctIndex == -1) {
-      println("POINT NOT INSIDE EITHER TRIAGNLE IN SQUARE");
+      // println("POINT NOT INSIDE EITHER TRIAGNLE IN SQUARE");
      }
     return correctIndex;
    } else {
-    println("POINT NOT INSIDE THE SCREEN");
+    // println("POINT NOT INSIDE THE SCREEN");
     return -1;
    }
  }
@@ -1042,7 +1052,7 @@ public void changePath(int[] indexes){
   if (index != -1) {
     landTriangles[index].highlight();
    } else {
-    println("ERROR");
+    // println("ERROR");
     //couldn't find triangle
    }
  }
