@@ -11,7 +11,9 @@ int numCols;
 float xWidth;
 float yHeight;
 
-int[] tempPath;
+int[] currentPath; // DO NOT USE THIS IN FUTURE THIS IS BAD
+
+ArrayList<Insect> insects = new ArrayList<Insect>();
 
 
 LandPlot(int _numCols, int _numRows, float _xWidth, float _yHeight) {
@@ -81,6 +83,14 @@ void resetNodeVals(){
         }
 }
 
+PVector[] returnPathLocations(int[] indexes){
+  PVector[] temp = new PVector[indexes.length];
+  for(int i = 0; i < temp.length; i++){
+    temp[i] = landTriangles[indexes[i]].center;
+  }
+  return temp;
+}
+
 void createPath(int start, int end){
         changePath(findTrianglePathFromTriangleToTriangle(start, end));
 }
@@ -147,8 +157,15 @@ int[] findTrianglePathFromTriangleToTriangle(int startIndex, int endIndex) {
         if(interationNum >= maxNumInterations) {
                 // println("HIT MAX");
         }
+currentPath = traceBack(endIndex);
+        return currentPath;
+}
 
-        return traceBack(endIndex);
+void addTrackingAnt(PVector position){
+  PVector targets[] = returnPathLocations(currentPath);
+ Ant temp = new Worker(position);
+ temp.beginTracking(targets);
+ insects.add(temp);
 }
 
 int[] traceBack(int endIndex){
@@ -162,6 +179,7 @@ int[] traceBack(int endIndex){
                 interationNum++;
         }
         steps.append(curIndex);
+        steps.reverse();
         return steps.array();
 }
 
@@ -270,6 +288,13 @@ void display() {
         for (int i = 0; i < landTriangles.length; i++) {
 
                 landTriangles[i].display(color(0));
+        }
+        for(int i = insects.size()-1; i >= 0 ; i--){
+
+          insects.get(i).update();
+          if(insects.get(i).targetIndex == -1){//reached the end of its path
+            insects.remove(i);
+          }
         }
 }
 
