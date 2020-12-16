@@ -44,8 +44,17 @@ LandPlot(int _numCols, int _numRows, float _xWidth, float _yHeight) {
                                         temp[i] = squareTriangles[index][i+3*j].copy();
                                 }
                                 int typeOfTriangle = index*2 + j;
-                                landTriangles[row*numCols*2 + col*2 + j] = new LandTriangle(temp, topLeft, xWidth, yHeight, typeOfTriangle);
+                                float increment = 0.1;
+                                float noiseX = float(col) * increment;
+                                float noiseY = float(row) * increment;
+
+                                LandTriangle tempTriangle = new LandTriangle(temp, topLeft, xWidth, yHeight, typeOfTriangle);
+                                if(noise(noiseX, noiseY) <= .3){
+                                  tempTriangle.type = "stone";
+                                }
+                                landTriangles[row*numCols*2 + col*2 + j] = tempTriangle;
                                 // println(row*numSquareCols*2 + col*2 + j);
+
                         }
 
                         // println(index);
